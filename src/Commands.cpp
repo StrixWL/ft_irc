@@ -1,7 +1,8 @@
 #include "Client.hpp"
 #include <algorithm>
+#include <Server.hpp>
 
-void Client::pass(std::string &commandLine) {
+void Client::pass(std::string &commandLine) { // 100% finished
 	// no params
 	if (!commandLine.length())
 		logger.warn("461 " + _nickName + " :Not enough parameters");
@@ -20,7 +21,7 @@ void Client::pass(std::string &commandLine) {
 	}
 }
 
-void Client::nick(std::string &commandLine) {
+void Client::nick(std::string &commandLine) { // 90% finished
 	// not this time 
 	if (commandLine[0] == ':')
 		commandLine.erase(0, 1);
@@ -44,9 +45,10 @@ void Client::nick(std::string &commandLine) {
 			// delete old nick
 			Client::_nickNames.erase(std::find(Client::_nickNames.begin(), Client::_nickNames.end(), oldNick));
 			// TODO: broadcast nickname change to all users
-			std::cout << "oldnick: " << oldNick << std::endl;
-			std::cout << "newnick: " << _nickName << std::endl;
-			send(":" + oldNick + " NICK " + _nickName + "\r\n");
+			//this->all_clients.push_back(my_client); std::vector<Client *> all_clients;
+			for (std::vector<Client *>::iterator it = irc_server.all_clients.begin(); it != irc_server.all_clients.end(); it++) {
+				(*it)->send(":" + oldNick + " NICK " + _nickName + "\r\n");
+			}
 		}
 	}
 	else
@@ -54,5 +56,6 @@ void Client::nick(std::string &commandLine) {
 }
 
 void Client::user(std::string &commandLine) {
+	
 }
 

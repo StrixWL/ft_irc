@@ -14,7 +14,7 @@
 #include "Client.hpp"
 
 class Client;
-class server{
+class server {
     public :
         int     server_fd;
         char    *password;
@@ -33,5 +33,7 @@ class server{
         void handle_disconnection(int i);
         ~server();
 };
+
+extern server irc_server;
 
 #endif

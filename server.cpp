@@ -1,5 +1,7 @@
 #include "Server.hpp"
 
+server irc_server;
+
 void server::start(char *port, char *password)
 {
     this->makeserver(port, password);
@@ -59,15 +61,13 @@ void server::accept_message(int i)
 {
     char buffer[2];
     std::string msg;
-    while (1)
+    while (*buffer != '\n')
     {
         bzero(buffer, 1);
         recv(p_fd[i].fd, buffer, 1, 0);
-        msg.append(buffer);
-		if (*buffer == '\n')
-			break ;
+        if (*buffer != '\n' && *buffer != '\r')
+            msg.append(buffer);
     }
-	msg = msg.substr(0, msg.length() - 2);
     this->all_clients[i - 1]->execute(msg);
 }
 
@@ -150,6 +150,5 @@ int main(int arc, char **arv)
         logger.error("the executable run as follows: ./ircserv <port> <password>");
         exit(1);
     }
-    server irc_server;
     irc_server.start(arv[1], arv[2]);
 }
