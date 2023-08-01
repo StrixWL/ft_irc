@@ -36,16 +36,17 @@ void Client::nick(std::string &commandLine) { // 90% finished
 			logger.warn("432 " + _nickName + " " + commandLine + " :Erroneus nickname");
 	}
 	//check if nickname alredy exist
-	if (!std::count(Client::_nickNames.begin(), Client::_nickNames.end(), commandLine)) {
+	bool alreadyExist = false;
+	for (std::vector<Client *>::iterator it = irc_server.all_clients.begin(); it != irc_server.all_clients.end(); it++) {
+		if ((*it)->_nickName == commandLine)
+			alreadyExist = true;
+	}
+	if (!alreadyExist) {
 		std::string oldNick = _nickName;
 		_nickName = commandLine;
-		Client::_nickNames.push_back(commandLine);
 		logger.info("nickname to set: [" + commandLine + "]");
 		if (oldNick != "*") {
-			// delete old nick
-			Client::_nickNames.erase(std::find(Client::_nickNames.begin(), Client::_nickNames.end(), oldNick));
-			// TODO: broadcast nickname change to all users
-			//this->all_clients.push_back(my_client); std::vector<Client *> all_clients;
+			// broadcast nickname change to all clients
 			for (std::vector<Client *>::iterator it = irc_server.all_clients.begin(); it != irc_server.all_clients.end(); it++) {
 				(*it)->send(":" + oldNick + " NICK " + _nickName + "\r\n");
 			}

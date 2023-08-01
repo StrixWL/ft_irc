@@ -43,7 +43,6 @@ class Client {
 		std::string _userName;
 		std::string _password;
 		bool _authorized;
-		static std::vector<std::string> _nickNames;
 		Client::Logger logger;
 	public:
 		bool _keepAlive;
