@@ -6,6 +6,13 @@ Logger::Logger() {
 	_info = true;
 	_error = true;
 	_verbose = true;
+
+	/* Uncomment to mute */
+	// _debug = false;
+	// _warn = false;
+	// _info = false;
+	// _error = false;
+	// _verbose = false;
 }
 
 std::string getTime() {
@@ -60,4 +67,5 @@ void Logger::warn(std::string message) {
 	std::cout << message << "\033[0m" << std::endl;
 }
 
+// declaring logger, this is an extern variable
 Logger logger;

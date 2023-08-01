@@ -4,8 +4,7 @@
 
 std::vector<std::string> Client::_nickNames;
 
-Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorized(false), _keepAlive(true) {
-	this->logger = CLogger(_clientFd);
+Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorized(false), _keepAlive(true), logger(client_fd) {
 	_commands.insert(std::make_pair("PASS", &Client::pass));
 	_commands.insert(std::make_pair("NICK", &Client::nick));
 	_commands.insert(std::make_pair("USER", &Client::user));
@@ -20,7 +19,7 @@ void Client::send(std::string msg) {
 }
 
 void Client::execute(std::string commandLine) {
-	this->logger.debug("Executing command line: [" + commandLine + "]");
+	logger.debug("Executing command line: [" + commandLine + "]");
 	std::string command = commandLine.substr(0, commandLine.find(" "));
 	commandLine.erase(0, command.length());
 	logger.verbose("command: [" + command + "]");
@@ -29,12 +28,12 @@ void Client::execute(std::string commandLine) {
 	logger.verbose("args: [" + commandLine + "]");
 	try {
 		if (command != "PASS" && command != "NICK" && command != "USER" && !_authorized) {
-			throw std::logic_error("464 " + _nickName + " :You have not registered\r\n");
+			logger.warn("464 " + _nickName + " :You have not registered");
 		}
 		if (_commands[command])
 			(this->*_commands[command])(commandLine);
 		else {
-			throw std::logic_error("421 " + _nickName + " " + command + " :Unknown command\r\n");
+			logger.warn("421 " + _nickName + " " + command + " :Unknown command");
 		}
 	} catch (std::exception &e) {
 			send(e.what());

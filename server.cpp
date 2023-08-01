@@ -34,7 +34,6 @@
 #include "Client.hpp"
 #include <Logger.hpp>
 
-
 int main()
 {
 	int server_fd, client_socket, k;

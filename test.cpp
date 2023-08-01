@@ -4,5 +4,9 @@
 #include <vector>
 
 int main() {
-	std::cout << "\033[90m𝘐talic and Gray\033[0m" << std::endl;
+	std::vector<int> v;
+	v.push_back(21);
+	v.push_back(211);
+	int k = *(v.data() + 1);
+	std::cout << k << std::endl;
 }
