@@ -32,6 +32,8 @@
 #include <fcntl.h>
 #include <poll.h>
 #include "Client.hpp"
+#include <Logger.hpp>
+
 
 int main()
 {
@@ -39,7 +41,6 @@ int main()
 	struct sockaddr_in address;
 	int opt = 1;
 	int addrlen = sizeof(address);
-	char buffer[1024] = { 0 };
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 	address.sin_family = AF_INET;
@@ -47,16 +48,23 @@ int main()
 	address.sin_port = htons(PORT);
 	bind(server_fd, (struct sockaddr *)&address, sizeof(address));
 	listen(server_fd, 3);
-	client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-	Client client = Client(client_socket);
     while (true) {
-		k = read(client_socket, buffer, 1024);
-		if (!k || !client._keepAlive)
-			break ;
-		buffer[k - 2] = 0;
-		client.execute(buffer);
+	    client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+	    Client client = Client(client_socket);
+        logger.info("Client connected");
+        while (true) {
+            char c;
+            std::string commandLine = "";
+            while ((k = read(client_socket, &c, 1)) && c != '\n') {
+                if (c != '\r')
+                    commandLine += c;
+            }
+		    if (!k || !client._keepAlive)
+			    break ;
+		    client.execute(commandLine);
+        }
+	    close(client_socket);
     }
-	close(client_socket);
 	shutdown(server_fd, SHUT_RDWR);
 	return 0;
 }
