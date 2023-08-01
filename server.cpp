@@ -1,81 +1,155 @@
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
-/* NOT MY CODE */ 
+#include "Server.hpp"
 
-#include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <iostream>
-#include <vector>
-#include <fcntl.h>
-#include <poll.h>
-#include "Client.hpp"
-#include <Logger.hpp>
-
-int main()
+void server::start(char *port, char *password)
 {
-	int server_fd, client_socket, k;
-	struct sockaddr_in address;
-	int opt = 1;
-	int addrlen = sizeof(address);
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-	setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(PORT);
-	bind(server_fd, (struct sockaddr *)&address, sizeof(address));
-	listen(server_fd, 3);
-    while (true) {
-	    client_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-	    Client client = Client(client_socket);
-        logger.info("Client connected");
-        while (true) {
-            char c;
-            std::string commandLine = "";
-            while ((k = read(client_socket, &c, 1)) && c != '\n') {
-                if (c != '\r')
-                    commandLine += c;
-            }
-		    if (!k || !client._keepAlive)
-			    break ;
-		    client.execute(commandLine);
+    this->makeserver(port, password);
+    pollfd serv_fd = {this->server_fd, POLLIN, 0};
+    this->p_fd.push_back(serv_fd);
+
+    while (true)
+    {
+        if (poll(this->p_fd.data(), this->p_fd.size(), -1) < 0)
+        {
+            logger.error("Error monitoring sockets!");
+            exit(1);
         }
-	    close(client_socket);
+       for (int i = 0; i < this->p_fd.size(); i++)
+        {
+            if (this->p_fd[i].revents == 0)
+                continue ;
+            if (this->p_fd[i].revents == POLLIN && this->p_fd[i].fd == server_fd)
+                handle_new_conection();
+            if (this->p_fd[i].revents == POLLIN && this->p_fd[i].fd != server_fd)
+                accept_message(i);
+            if (this->p_fd[i].revents == 17)
+                handle_disconnection(i);
+        }
+        for (int i = 0; i < this->all_clients.size(); i++)
+        {
+            if (!this->all_clients[i]->_keepAlive)
+                handle_disconnection(i + 1);
+        }
     }
-	shutdown(server_fd, SHUT_RDWR);
-	return 0;
 }
 
-// PASS <password>	
-// 001 JohnDoe :Welcome to ExampleIRC, JohnDoe!
-/*
-421 JohnDoe XYZ :Unknown command
-	JohnDoe nickname
-	XYZ command
-*/
-// NICK <nickname>
-// USER <username> 0 * <realname>
-// nc lithium.libera.chat 6667
-// nickname should be unique
+void server::handle_new_conection()
+{
+    int fd;
+
+    fd = accept(this->server_fd, NULL, NULL);
+    if (fd < 0)
+    {
+        logger.error("Error accepting a new connection");
+        exit (1);
+    }
+	
+    if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) {
+        logger.error("Error setting socket to nonblocking mode!");
+        exit(1);
+    }
+    pollfd pd = {fd, POLLIN, 0};
+    this->p_fd.push_back(pd);
+
+    Client *my_client = new Client(fd);
+    this->all_clients.push_back(my_client);
+    logger.info("a new client has connected");
+}
+
+void server::accept_message(int i)
+{
+    char buffer[2];
+    std::string msg;
+    while (1)
+    {
+        bzero(buffer, 1);
+        recv(p_fd[i].fd, buffer, 1, 0);
+        msg.append(buffer);
+		if (*buffer == '\n')
+			break ;
+    }
+	msg = msg.substr(0, msg.length() - 2);
+    this->all_clients[i - 1]->execute(msg);
+}
+
+void server::handle_disconnection(int i)
+{
+    int fd;
+
+    fd = p_fd[i].fd;
+    this->all_clients.erase(this->all_clients.begin() + i - 1);
+    this->p_fd.erase(this->p_fd.begin() + i);
+    close(fd);
+    delete this->all_clients[i - 1];
+   logger.info("Client has disconnected");
+}
+
+void server::makeserver(char *port, char *password)
+{
+    this->port = atoi(port);
+    if (this->port <= 0)
+    {
+        logger.error("PORT ERROR!");
+        exit(1);
+    }
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd < 0)
+    {
+        logger.error("Failed to create socket!");
+        exit(1);
+    }
+    if (fcntl(server_fd, F_SETFL, O_NONBLOCK) == -1) {
+        logger.error("Error setting socket to nonblocking mode!");
+        exit(1);
+    }
+    this->password = password;
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(this->port);
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    int optValue = 1;
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &optValue, sizeof(optValue)) == -1) {
+        logger.error("Error calling setsockopt");
+        exit(1);
+    }
+    if (bind(server_fd, (struct sockaddr*)&server_address, sizeof(sockaddr)) < 0) {
+        logger.error("Failed to bind to " + std::to_string(this->port));
+        exit(1);
+    }
+	logger.info("Server Socket has been created and binded successfully");
+    if (listen(server_fd, SOMAXCONN) < 0) {
+        logger.error("Failed to listen on the socket" + std::to_string(errno));
+        exit(1);
+    }
+    logger.info("Listening ...");
+
+}
+
+server::~server(){
+    for (int i = 0; i < this->all_clients.size(); i++)
+    {
+        delete all_clients[i];
+        close(this->p_fd[i + 1].fd);
+    }
+    close(p_fd[0].fd);
+}
+
+// loop on is_still alive
+// (done) fix disconnection and messages problem 
+// (done) set socket to nonblock
+// (done) failed to bind to
+// ask if i should change keep_alive
+// (done) distructor
+// (done) check nonblocking
+// logg when succefuly passing something succefully and when a function fails
+
+
+
+int main(int arc, char **arv)
+{
+    if (arc != 3)
+    {
+        logger.error("the executable run as follows: ./ircserv <port> <password>");
+        exit(1);
+    }
+    server irc_server;
+    irc_server.start(arv[1], arv[2]);
+}

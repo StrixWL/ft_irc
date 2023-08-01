@@ -17,7 +17,6 @@ class Client {
 	class Logger {
 		public:
 			const int _id;
-			Logger(): _id(2) {}
 			Logger(int id): _id(id) {}
 			void debug(std::string message) {
 				::logger.debug("\033[1;37m[" + std::to_string(_id) + "]\033[0m " + message);

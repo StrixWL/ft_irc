@@ -2,7 +2,8 @@ NAME=			server
 # FLAGS=			-Wall -Werror -Wextra
 CC=				c++
 HEADERS=		include/Client.hpp \
-				include/Logger.hpp
+				include/Logger.hpp \
+				include/Server.hpp
 SRC_DIR=		src
 SRC_FILES=		server.cpp \
 				src/Client.cpp \
