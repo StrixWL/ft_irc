@@ -19,9 +19,13 @@ void Client::pass(std::string &commandLine) { // 100% finished
 		std::string e = "464 " + _nickName + " :Password incorrect";
 		logger.warn(e);
 	}
+	// we dont knoe which auth command will be executed the last so everytime we check whether we have the conditions
+		// to authorize the client or not
+	if (_userName.length() && _realName.length() && _nickName != "*" && _authorized)
+		_registered = true;
 }
 
-void Client::nick(std::string &commandLine) { // 90% finished
+void Client::nick(std::string &commandLine) { // 100% finished
 	// not this time 
 	if (commandLine[0] == ':')
 		commandLine.erase(0, 1);
@@ -54,9 +58,35 @@ void Client::nick(std::string &commandLine) { // 90% finished
 	}
 	else
 		logger.warn("433 " + _nickName + " " + commandLine + " :Nickname is already in use");
+	// we dont knoe which auth command will be executed the last so everytime we check whether we have the conditions
+		// to authorize the client or not
+	if (_userName.length() && _realName.length() && _nickName != "*" && _authorized)
+		_registered = true;
 }
 
-void Client::user(std::string &commandLine) {
-	
+void Client::user(std::string &commandLine) { // 100% finished
+	// just simple repetitive parsing, we dont need the 2nd and 3rd arg, 1st is username and 4th is realname
+	std::string userName = commandLine.substr(0, commandLine.find(" "));
+	commandLine.erase(0, userName.length());
+	while (commandLine[0] == ' ')
+		commandLine.erase(0, 1);
+	std::string zero = commandLine.substr(0, commandLine.find(" "));
+	commandLine.erase(0, zero.length());
+	while (commandLine[0] == ' ')
+		commandLine.erase(0, 1);
+	std::string asterisk = commandLine.substr(0, commandLine.find(" ")); // asterisk is the character '*'
+	commandLine.erase(0, asterisk.length());
+	while (commandLine[0] == ' ')
+		commandLine.erase(0, 1);
+	std::string realName = commandLine;
+	if (!zero.length() || !asterisk.length() || !userName.length() || !realName.length())
+		logger.warn("461 " + _nickName + " " + commandLine + " :Not enough parameters");
+	_userName = userName;
+	logger.info("username set to " + _userName);
+	_realName = realName;
+	logger.info("realname set to " + _realName);
+	// we dont knoe which auth command will be executed the last so everytime we check whether we have the conditions
+		// to authorize the client or not
+	if (_userName.length() && _realName.length() && _nickName != "*" && _authorized)
+		_registered = true;
 }
-

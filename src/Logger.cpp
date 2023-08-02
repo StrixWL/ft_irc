@@ -16,6 +16,7 @@ Logger::Logger() {
 }
 
 std::string getTime() {
+	// le time
 	std::time_t now = std::time(NULL);
     std::tm *timeinfo = std::localtime(&now);
 	std::string hour = std::to_string(timeinfo->tm_hour);

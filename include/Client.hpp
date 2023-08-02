@@ -14,6 +14,8 @@
 		
 class Client {
 	// bai bai old logger, each client will have its own logger now
+	/* this will be used to construct a logger for each client so that we could output
+			the client id before each log message, cool right? */
 	class Logger {
 		public:
 			const int _id;
@@ -41,8 +43,12 @@ class Client {
 		std::map<std::string, void (Client::*)(std::string &)> _commands;
 		std::string _nickName;
 		std::string _userName;
+		std::string _realName;
 		std::string _password;
+		// authorized means client entered correct password (only)
 		bool _authorized;
+		// registered means client entered correct password, a valid nickname, username and realname 
+		bool _registered;
 		Client::Logger logger;
 	public:
 		bool _keepAlive;
