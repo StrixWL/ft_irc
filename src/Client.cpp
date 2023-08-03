@@ -6,9 +6,13 @@
 
 // these are the commands
 Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorized(false), _registered(false), _keepAlive(true), logger(client_fd) {
-	_commands.insert(std::make_pair("USER", &Client::user));
-	_commands.insert(std::make_pair("PASS", &Client::pass));
-	_commands.insert(std::make_pair("NICK", &Client::nick));
+	_commands.insert(std::make_pair("USER", &Client::user)); // (complete)
+	_commands.insert(std::make_pair("PASS", &Client::pass)); // (complete)
+	_commands.insert(std::make_pair("NICK", &Client::nick)); // (complete)
+	_commands.insert(std::make_pair("JOIN", &Client::join));
+	_commands.insert(std::make_pair("PRIVMSG", &Client::privmsg));
+	_commands.insert(std::make_pair("QUIT", &Client::quit));
+
 }
 
 int Client::getFd(void) {
@@ -49,7 +53,7 @@ void Client::execute(std::string commandLine) {
 	} catch (std::exception &e) {
 			// any thrown error will be sent back to the client
 			send(e.what());
-			// disconnect user if its dead, not useful yet
+			// disconnect in some cases
 			if (!_keepAlive) {
 				close(_clientFd);
 			}

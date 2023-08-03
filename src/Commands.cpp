@@ -22,7 +22,7 @@ void Client::pass(std::string &commandLine) { // 100% finished
 	// we dont knoe which auth command will be executed the last so everytime we check whether we have the conditions
 		// to authorize the client or not
 	if (_userName.length() && _realName.length() && _nickName != "*" && _authorized)
-		_registered = true;
+		welcome();
 }
 
 void Client::nick(std::string &commandLine) { // 100% finished
@@ -61,7 +61,7 @@ void Client::nick(std::string &commandLine) { // 100% finished
 	// we dont knoe which auth command will be executed the last so everytime we check whether we have the conditions
 		// to authorize the client or not
 	if (_userName.length() && _realName.length() && _nickName != "*" && _authorized)
-		_registered = true;
+		welcome();
 }
 
 void Client::user(std::string &commandLine) { // 100% finished
@@ -88,5 +88,49 @@ void Client::user(std::string &commandLine) { // 100% finished
 	// we dont knoe which auth command will be executed the last so everytime we check whether we have the conditions
 		// to authorize the client or not
 	if (_userName.length() && _realName.length() && _nickName != "*" && _authorized)
-		_registered = true;
+		welcome();
+}
+
+void Client::welcome(void) {
+	_registered = true;
+	// sending welcome message is required so that users can create channels on Limechat client
+	send("001 " + _userName + " :Welcome to the Strix Internet Relay Chat Network " + _nickName + "\r\n");
+}
+
+void Client::join(std::string &commandLine) {
+	std::cout << commandLine << std::endl;
+}
+
+void Client::privmsg(std::string &commandLine) {
+	bool onlyOP = false;
+	bool isChannel;
+	if (commandLine[0] == '@') {
+		onlyOP = true;
+		commandLine.erase(0, 1);
+	}
+	if (commandLine[0] == '#') {
+		commandLine.erase(0, 1);
+		// channel stuff
+	}
+	else {
+		std::string receiver = commandLine.substr(0, commandLine.find(" "));
+		commandLine.erase(0, receiver.length());
+		while (commandLine[0] == ' ')
+			commandLine.erase(0, 1);
+		std::string message = commandLine;
+		for (std::vector<Client *>::iterator it = irc_server.all_clients.begin(); it != irc_server.all_clients.end(); it++) {
+			if ((*it)->_nickName == receiver) {
+				//:StrixKR!~StrixUser@197.230.30.146 PRIVMSG zab :hh
+				//:eNick!~eUser@197.230.30.146 PRIVMSG cc :q
+				(*it)->send(":" + _nickName + "!" + _userName + "@197.230.30.146" + " PRIVMSG " + receiver + " :" + message + "\r\n");
+				return ;
+			}
+		}
+		logger.warn("401 " + _nickName + " " + receiver + " :No such nick/channel");
+	}
+}
+//:StrixKR!~StrixUser@197.230.30.146 PRIVMSG tabon :slm
+void Client::quit(std::string &commandLine) {
+	send("ERROR :Closing Link: 127.0.0.1 (Client Quit)\r\n");
+	_keepAlive = false;
 }

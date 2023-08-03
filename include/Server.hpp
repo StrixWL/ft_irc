@@ -12,6 +12,7 @@
 #include <poll.h>
 #include <arpa/inet.h>
 #include "Client.hpp"
+#include "Channel.hpp"
 
 class Client;
 class server {
@@ -19,12 +20,12 @@ class server {
         int     server_fd;
         char    *password;
         int     port;
-    
+
         std::vector<pollfd> p_fd;
         std::vector<Client *> all_clients;
+        std::vector<Channel *> channels;
 
         struct sockaddr_in server_address;
-        
 
         void start(char *, char *);
         void  makeserver(char *port, char*password);

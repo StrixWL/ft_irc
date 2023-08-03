@@ -11,7 +11,7 @@
 
 #define PASSWORD ":1"
 #define PORT 6667
-		
+
 class Client {
 	// bai bai old logger, each client will have its own logger now
 	/* this will be used to construct a logger for each client so that we could output
@@ -56,9 +56,13 @@ class Client {
 		int getFd(void);
 		void send(std::string msg);
 		void execute(std::string commandLine);
+		void welcome(void);
 		void pass(std::string &commandLine);
 		void nick(std::string &commandLine);
 		void user(std::string &commandLine);
+		void join(std::string &commandLine);
+		void privmsg(std::string &commandLine);
+		void quit(std::string &commandLine);
 };
 
 
