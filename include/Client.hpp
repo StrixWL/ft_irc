@@ -9,7 +9,7 @@
 #include <iostream>
 #include <Logger.hpp>
 
-#define PASSWORD ":1"
+#define PASSWORD "123"
 #define PORT 6667
 
 class Client {
@@ -44,6 +44,7 @@ class Client {
 		std::string _nickName;
 		std::string _userName;
 		std::string _realName;
+		std::string _IPAddress;
 		std::string _password;
 		// authorized means client entered correct password (only)
 		bool _authorized;

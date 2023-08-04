@@ -79,7 +79,7 @@ void server::handle_disconnection(int i)
     this->all_clients.erase(this->all_clients.begin() + i - 1);
     this->p_fd.erase(this->p_fd.begin() + i);
     close(fd);
-    delete this->all_clients[i - 1];
+    delete this->all_clients[i - 1]; // this is segfaulting bro
    logger.info("Client has disconnected");
 }
 
@@ -120,7 +120,6 @@ void server::makeserver(char *port, char *password)
         exit(1);
     }
     logger.info("Listening ...");
-
 }
 
 server::~server(){

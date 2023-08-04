@@ -6,6 +6,9 @@
 #include <string>
 #include <Logger.hpp>
 
+// doesnt work help
+#define BOLD(x) "\033[1m" x "\033[0m"
+
 class Logger {
 	private:
 		bool _debug;

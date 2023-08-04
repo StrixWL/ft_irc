@@ -12,6 +12,7 @@ Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorize
 	_commands.insert(std::make_pair("JOIN", &Client::join));
 	_commands.insert(std::make_pair("PRIVMSG", &Client::privmsg));
 	_commands.insert(std::make_pair("QUIT", &Client::quit));
+	_IPAddress = "10.30.232.119";
 
 }
 
