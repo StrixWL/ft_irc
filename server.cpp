@@ -1,7 +1,5 @@
 #include "Server.hpp"
 
-server irc_server;
-
 void server::start(char *port, char *password)
 {
     this->makeserver(port, password);
@@ -19,9 +17,9 @@ void server::start(char *port, char *password)
         {
             if (this->p_fd[i].revents == 0)
                 continue ;
-            if (this->p_fd[i].revents == POLLIN && this->p_fd[i].fd == server_fd)
+            if (this->p_fd[i].revents == 1 && this->p_fd[i].fd == server_fd)
                 handle_new_conection();
-            if (this->p_fd[i].revents == POLLIN && this->p_fd[i].fd != server_fd)
+            if (this->p_fd[i].revents == 1 && this->p_fd[i].fd != server_fd)
                 accept_message(i);
             if (this->p_fd[i].revents == 17)
                 handle_disconnection(i);
@@ -59,14 +57,18 @@ void server::handle_new_conection()
 
 void server::accept_message(int i)
 {
-    char buffer[2];
+    char buffer[100];
     std::string msg;
-    while (*buffer != '\n')
+    while (1)
     {
-        bzero(buffer, 1);
-        recv(p_fd[i].fd, buffer, 1, 0);
-        if (*buffer != '\n' && *buffer != '\r')
-            msg.append(buffer);
+        bzero(buffer, 100);
+        recv(p_fd[i].fd, buffer, 99, 0);
+        msg.append(buffer);
+		if (strchr(buffer, '\n'))
+			break ;
+    }
+    while (msg[msg.length() - 1] == '\n' || msg[msg.length() - 1] == '\r') {
+        msg = msg.substr(0, msg.length() - 1);
     }
     this->all_clients[i - 1]->execute(msg);
 }
@@ -76,10 +78,10 @@ void server::handle_disconnection(int i)
     int fd;
 
     fd = p_fd[i].fd;
+    delete this->all_clients[i - 1];
     this->all_clients.erase(this->all_clients.begin() + i - 1);
     this->p_fd.erase(this->p_fd.begin() + i);
     close(fd);
-    delete this->all_clients[i - 1]; // this is segfaulting bro
    logger.info("Client has disconnected");
 }
 
@@ -97,10 +99,6 @@ void server::makeserver(char *port, char *password)
         logger.error("Failed to create socket!");
         exit(1);
     }
-    if (fcntl(server_fd, F_SETFL, O_NONBLOCK) == -1) {
-        logger.error("Error setting socket to nonblocking mode!");
-        exit(1);
-    }
     this->password = password;
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(this->port);
@@ -114,21 +112,29 @@ void server::makeserver(char *port, char *password)
         logger.error("Failed to bind to " + std::to_string(this->port));
         exit(1);
     }
+
 	logger.info("Server Socket has been created and binded successfully");
     if (listen(server_fd, SOMAXCONN) < 0) {
         logger.error("Failed to listen on the socket" + std::to_string(errno));
         exit(1);
     }
     logger.info("Listening ...");
+
+    if (fcntl(server_fd, F_SETFL, O_NONBLOCK) == -1) {
+        logger.error("Error setting socket to nonblocking mode!");
+        exit(1);
+    }
 }
 
 server::~server(){
+ 
     for (int i = 0; i < this->all_clients.size(); i++)
     {
         delete all_clients[i];
         close(this->p_fd[i + 1].fd);
     }
-    close(p_fd[0].fd);
+    if (p_fd.size())
+        close(p_fd[0].fd);
 }
 
 // loop on is_still alive
@@ -139,6 +145,7 @@ server::~server(){
 // (done) distructor
 // (done) check nonblocking
 // logg when succefuly passing something succefully and when a function fails
+// remove strchr and bzero and strstr from this file and the bot file
 
 
 
@@ -149,5 +156,8 @@ int main(int arc, char **arv)
         logger.error("the executable run as follows: ./ircserv <port> <password>");
         exit(1);
     }
+    
     irc_server.start(arv[1], arv[2]);
 }
+
+server irc_server;
