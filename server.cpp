@@ -95,13 +95,16 @@ void server::handle_disconnection(int i)
                     delete channel;
                     channels.erase(it--);
                 }
+                // inform channel members that he left
+                else {
+                    for (std::vector<Client *>::iterator __it = channel->_members.begin(); __it != channel->_members.end(); __it++)
+                        (*__it)->send(":" + all_clients[i - 1]->_nickName + " QUIT :Quit: " + all_clients[i - 1]->_leaveMessage + "\r\n");
+                }
+                break ;
             }
-            // inform channel members that he left
-            else
-                (*_it)->send(":" + all_clients[i - 1]->_nickName + " QUIT :Quit: " + all_clients[i - 1]->_leaveMessage + "\r\n");
         }
     }
-    //
+    // THIS IS SO SHIT, I SWEAR TO GOD I CAN WRITE BETTER CODE, AM JUST TIRED AND SLEEPY
     this->all_clients.erase(this->all_clients.begin() + i - 1);
     this->p_fd.erase(this->p_fd.begin() + i);
     close(fd);

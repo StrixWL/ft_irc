@@ -72,9 +72,9 @@ int main() {
     // Set up the server address
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(6667); // IRC default port
-    // inet_pton(AF_INET, "127.0.0.1", &(serverAddress.sin_addr));
+    inet_pton(AF_INET, "127.0.0.1", &(serverAddress.sin_addr));
     // inet_pton(AF_INET, "176.58.122.119", &(serverAddress.sin_addr));
-    inet_pton(AF_INET, "45.56.126.124", &(serverAddress.sin_addr));
+    // inet_pton(AF_INET, "45.56.126.124", &(serverAddress.sin_addr));
 
     // Connect to the server
     if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
