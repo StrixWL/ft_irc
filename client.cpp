@@ -74,6 +74,7 @@ int main() {
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(6667); // IRC default port
     inet_pton(AF_INET, "127.0.0.1", &(serverAddress.sin_addr));
+    // inet_pton(AF_INET, "176.58.122.119", &(serverAddress.sin_addr));
 
     // Connect to the server
     if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
@@ -87,7 +88,13 @@ int main() {
         std::cerr << "Error creating receive thread." << std::endl;
         return 1;
     }
-
+    std::string s = "NICK Stex\r\n";
+    send(clientSocket, s.c_str(), s.length(), 0);
+    s = "USER StexU s s StexR\r\n";
+    send(clientSocket, s.c_str(), s.length(), 0);
+    s = "PASS 123\r\n";
+    send(clientSocket, s.c_str(), s.length(), 0);
+    std::cout << "hhh" << std::endl;
     // Send and receive messages
     char buffer[BUFFER_SIZE];
     while (true) {

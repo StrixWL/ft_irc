@@ -1,6 +1,7 @@
 #include "Client.hpp"
 #include <algorithm>
 #include <Server.hpp>
+#include "Channel.hpp"
 
 void Client::pass(std::string &commandLine) { // 100% finished
 	// no params
@@ -99,7 +100,23 @@ void Client::welcome(void) {
 }
 
 void Client::join(std::string &commandLine) {
-	std::cout << commandLine << std::endl;
+	if (commandLine[0] != '#')
+		logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
+	for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
+		if ((*it)->_name == commandLine) {
+			// i legit have no clue what am i doing at this point
+			if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end()) {
+				return ;
+			}
+			(*it)->_members.push_back(this);
+			(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + commandLine + "\r\n");
+			return ;
+		}
+	}
+	Channel *newChannel = new Channel(commandLine);
+	irc_server.channels.push_back(newChannel);
+	newChannel->_members.push_back(this);
+	newChannel->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + commandLine + "\r\n");
 }
 
 void Client::privmsg(std::string &commandLine) {
@@ -111,8 +128,23 @@ void Client::privmsg(std::string &commandLine) {
 		commandLine.erase(0, 1);
 	}
 	if (commandLine[0] == '#') {
-		commandLine.erase(0, 1);
 		// channel stuff
+		for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
+			std::string channel = commandLine.substr(0, commandLine.find(" "));
+			commandLine.erase(0, channel.length());
+			while (commandLine[0] == ' ')
+				commandLine.erase(0, 1);
+			std::string message = commandLine;
+			if ((*it)->_name == channel) {
+				// channel found
+				if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end())
+					(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PRIVMSG " + channel + " " + message + "\r\n", this);
+				else
+					send("404 " + _nickName + " " + channel + " :Cannot send to nick/channel\r\n");
+				return ;
+			}
+		}
+		logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
 	}
 	else {
 		std::string receiver = commandLine.substr(0, commandLine.find(" "));

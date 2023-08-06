@@ -3,13 +3,15 @@ FLAGS=			#-Wall -Werror -Wextra
 CC=				c++
 HEADERS=		include/Client.hpp \
 				include/Logger.hpp \
-				include/Server.hpp
+				include/Server.hpp \
+				include/Channel.hpp
 BONUS_HEADERS=	bonus/bot/bot.hpp
 SRC_DIR=		src
 SRC_FILES=		server.cpp \
 				src/Client.cpp \
 				src/Logger.cpp \
 				src/Commands.cpp \
+				src/Channel.cpp
 
 SRC_FILES_BONUS= src/Logger.cpp \
 				 bonus/bot/bot.cpp
