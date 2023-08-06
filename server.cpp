@@ -57,12 +57,12 @@ void server::handle_new_conection()
 
 void server::accept_message(int i)
 {
-    char buffer[100];
+    char buffer[2];
     std::string msg;
     while (1)
     {
-        bzero(buffer, 100);
-        recv(p_fd[i].fd, buffer, 99, 0);
+        bzero(buffer, 2);
+        recv(p_fd[i].fd, buffer, 1, 0);
         msg.append(buffer);
 		if (strchr(buffer, '\n'))
 			break ;

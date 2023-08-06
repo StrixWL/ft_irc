@@ -100,23 +100,34 @@ void Client::welcome(void) {
 }
 
 void Client::join(std::string &commandLine) {
+	// BIGASS TODO: handle multiple channels instead of just one
 	if (commandLine[0] != '#')
 		logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
+	// we check if channel already exist, if it does, add user to the channel, if not, create new channel
 	for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
 		if ((*it)->_name == commandLine) {
 			// i legit have no clue what am i doing at this point
 			if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end()) {
+				// do nothing if member already part of the channel
 				return ;
 			}
+			// add user to channel members
 			(*it)->_members.push_back(this);
+			// inform everyone that user has joined
 			(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + commandLine + "\r\n");
+			// TODO: send _userName list of all existing members in that channel
 			return ;
 		}
 	}
+	// creating new channel since it doesnt exist already
 	Channel *newChannel = new Channel(commandLine);
 	irc_server.channels.push_back(newChannel);
+	// add user to channel members
 	newChannel->_members.push_back(this);
+	// inform everyone that user has joined
 	newChannel->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + commandLine + "\r\n");
+	// TODOn't: send _userName list of all existing members in that channel, cuz he's the first one to join so no need lol
+	// TODO: inform user that he's the channel operator
 }
 
 void Client::privmsg(std::string &commandLine) {
@@ -124,12 +135,15 @@ void Client::privmsg(std::string &commandLine) {
 	bool isChannel;
 	// only operators will be able to see :O
 	if (commandLine[0] == '@') {
+		// TODO: handle op only messages
 		onlyOP = true;
 		commandLine.erase(0, 1);
 	}
+	// channel stuff
 	if (commandLine[0] == '#') {
-		// channel stuff
+		// find channel
 		for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
+			// parse channel and message that we should broadcast
 			std::string channel = commandLine.substr(0, commandLine.find(" "));
 			commandLine.erase(0, channel.length());
 			while (commandLine[0] == ' ')
@@ -138,6 +152,7 @@ void Client::privmsg(std::string &commandLine) {
 			if ((*it)->_name == channel) {
 				// channel found
 				if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end())
+					// user is member of that channel
 					(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PRIVMSG " + channel + " " + message + "\r\n", this);
 				else
 					send("404 " + _nickName + " " + channel + " :Cannot send to nick/channel\r\n");
@@ -146,6 +161,7 @@ void Client::privmsg(std::string &commandLine) {
 		}
 		logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
 	}
+	// DM stuff
 	else {
 		std::string receiver = commandLine.substr(0, commandLine.find(" "));
 		commandLine.erase(0, receiver.length());
