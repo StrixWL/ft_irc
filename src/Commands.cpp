@@ -43,8 +43,10 @@ void Client::nick(std::string &commandLine) { // 100% finished
 	//check if nickname alredy exist
 	bool alreadyExist = false;
 	for (std::vector<Client *>::iterator it = irc_server.all_clients.begin(); it != irc_server.all_clients.end(); it++) {
-		if ((*it)->_nickName == commandLine)
+		if ((*it)->_nickName == commandLine) {
 			alreadyExist = true;
+			break ;
+		}
 	}
 	if (!alreadyExist) {
 		std::string oldNick = _nickName;
@@ -100,9 +102,22 @@ void Client::welcome(void) {
 }
 
 void Client::join(std::string &commandLine) {
-	// BIGASS TODO: handle multiple channels instead of just one
-	if (commandLine[0] != '#')
+	// when space is found, stop
+	if (commandLine[0] == ' ')
+		return ;
+	// handle multiple channels instead of just one using recursion
+	if (commandLine.find(",") != std::string::npos) {
+		std::string nextChannels = commandLine.substr(commandLine.find(",") + 1, commandLine.length());
+		join(nextChannels);
+		commandLine = commandLine.substr(0, commandLine.find(","));
+	}
+	// channel names MUST not have white spaces
+	if (commandLine.find(" ") != std::string::npos)
+		logger.warn("476 " + _userName + " " + commandLine + " :Invalid channel name");
+	// channel names MUST start with #
+	if (commandLine[0] != '#') {
 		logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
+	}
 	// we check if channel already exist, if it does, add user to the channel, if not, create new channel
 	for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
 		if ((*it)->_name == commandLine) {
@@ -111,23 +126,27 @@ void Client::join(std::string &commandLine) {
 				// do nothing if member already part of the channel
 				return ;
 			}
-			// add user to channel members
+			// add user to existing channel members
 			(*it)->_members.push_back(this);
 			// inform everyone that user has joined
 			(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + commandLine + "\r\n");
-			// TODO: send _userName list of all existing members in that channel
+			// send list of all existing members in that channel
+			send("353 " + _nickName + " = " + (*it)->_name + " :" + (*it)->getNames() + "\r\n");
+			send("366 " + _nickName + " " + (*it)->_name + " :End of /NAMES list.\r\n");
 			return ;
 		}
 	}
 	// creating new channel since it doesnt exist already
 	Channel *newChannel = new Channel(commandLine);
 	irc_server.channels.push_back(newChannel);
-	// add user to channel members
+	// add user to channel members + operators
 	newChannel->_members.push_back(this);
+	newChannel->_operators.push_back(this);
 	// inform everyone that user has joined
 	newChannel->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + commandLine + "\r\n");
-	// TODOn't: send _userName list of all existing members in that channel, cuz he's the first one to join so no need lol
-	// TODO: inform user that he's the channel operator
+	// send list of all existing members in that channel
+	send("353 " + _nickName + " = " + newChannel->_name + " :" + newChannel->getNames() + "\r\n");
+	send("366 " + _nickName + " " + newChannel->_name + " :End of /NAMES list.\r\n");
 }
 
 void Client::privmsg(std::string &commandLine) {
@@ -145,10 +164,10 @@ void Client::privmsg(std::string &commandLine) {
 		for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
 			// parse channel and message that we should broadcast
 			std::string channel = commandLine.substr(0, commandLine.find(" "));
-			commandLine.erase(0, channel.length());
-			while (commandLine[0] == ' ')
-				commandLine.erase(0, 1);
 			std::string message = commandLine;
+			message.erase(0, channel.length());
+			while (message[0] == ' ')
+				message.erase(0, 1);
 			if ((*it)->_name == channel) {
 				// channel found
 				if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end())
@@ -159,6 +178,7 @@ void Client::privmsg(std::string &commandLine) {
 				return ;
 			}
 		}
+		std::cout << "=> |" << commandLine << "|" << std::endl;
 		logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
 	}
 	// DM stuff
@@ -184,3 +204,5 @@ void Client::quit(std::string &commandLine) {
 	send("ERROR :Closing Link: " + _IPAddress + " (Client Quit)\r\n");
 	_keepAlive = false;
 }
+
+// brojola hadshi tl3li frassi hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhelpmepleasehhhhhhhhhhhhhhhhhhhhhh

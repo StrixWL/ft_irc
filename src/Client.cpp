@@ -60,13 +60,3 @@ void Client::execute(std::string commandLine) {
 			}
 	}
 }
-
-
-/*
-:Stex!~StexU@197.230.30.146 JOIN #slm
-:lithium.libera.chat MODE #slm +Cnst
-:lithium.libera.chat 353 Stex @ #slm :@Stex
-:lithium.libera.chat 366 Stex #slm :End of /NAMES list.
-
-:Stex JOIN #Aloooo
-*/

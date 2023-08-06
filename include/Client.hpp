@@ -38,7 +38,7 @@ class Client {
 				::logger.verbose("\033[1;37m[" + std::to_string(_id) + "]\033[0m " +  message);
 			}
 	};
-	private:
+	public: // private
 		int _clientFd;
 		std::map<std::string, void (Client::*)(std::string &)> _commands;
 		std::string _nickName;

@@ -10,10 +10,12 @@ class Channel {
 		Channel(std::string &name);
 		std::string _name;
 		std::vector<Client *> _members;
+		std::vector<Client *> _operators;
 		// broadcast to all members
 		void broadcast(std::string message);
 		// broadcast to all members except the broadcaster
 		void broadcast(std::string message, Client *broadcaster);
+		std::string getNames(void);
 };
 
 #endif

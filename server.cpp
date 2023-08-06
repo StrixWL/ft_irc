@@ -79,6 +79,23 @@ void server::handle_disconnection(int i)
 
     fd = p_fd[i].fd;
     delete this->all_clients[i - 1];
+    // EDITED, SORRY, I HAVE TO DELETE DELETED CLIENTS FROM CHANNELS AS WELL AND THERE IS NO OTHER WAY c:
+    for (std::vector<Channel *>::iterator it = channels.begin(); it != channels.end(); it++) {\
+        Channel *channel = *it;
+        for (std::vector<Client *>::iterator _it = channel->_operators.begin(); _it != channel->_operators.end(); _it++)
+            if (*_it == all_clients[i - 1])
+                channel->_operators.erase(_it--);
+        for (std::vector<Client *>::iterator _it = channel->_members.begin(); _it != channel->_members.end(); _it++) {
+            if (*_it == all_clients[i - 1]) {
+                channel->_members.erase(_it--);
+                if (!channel->_members.size()) {
+                    delete channel;
+                    channels.erase(it--);
+                }
+            }
+        }
+    }
+    //
     this->all_clients.erase(this->all_clients.begin() + i - 1);
     this->p_fd.erase(this->p_fd.begin() + i);
     close(fd);
