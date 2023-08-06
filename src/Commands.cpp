@@ -178,7 +178,6 @@ void Client::privmsg(std::string &commandLine) {
 				return ;
 			}
 		}
-		std::cout << "=> |" << commandLine << "|" << std::endl;
 		logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
 	}
 	// DM stuff
@@ -201,8 +200,16 @@ void Client::privmsg(std::string &commandLine) {
 }
 
 void Client::quit(std::string &commandLine) {
+	// commandLine = Leaving...
+	_leaveMessage = commandLine;
 	send("ERROR :Closing Link: " + _IPAddress + " (Client Quit)\r\n");
 	_keepAlive = false;
 }
 
 // brojola hadshi tl3li frassi hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhelpmepleasehhhhhhhhhhhhhhhhhhhhhh
+
+/*
+TODO:
+:offi1!~offiU1@freenode-obu.d75.6g0qj4.IP JOIN :#channel
+:offi2!~offiU2@freenode-obu.d75.6g0qj4.IP PART #channel :"Leaving..."
+*/

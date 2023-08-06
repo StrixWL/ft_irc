@@ -46,6 +46,7 @@ class Client {
 		std::string _realName;
 		std::string _IPAddress;
 		std::string _password;
+		std::string _leaveMessage;
 		// authorized means client entered correct password (only)
 		bool _authorized;
 		// registered means client entered correct password, a valid nickname, username and realname 

@@ -79,20 +79,26 @@ void server::handle_disconnection(int i)
 
     fd = p_fd[i].fd;
     delete this->all_clients[i - 1];
-    // EDITED, SORRY, I HAVE TO DELETE DELETED CLIENTS FROM CHANNELS AS WELL AND THERE IS NO OTHER WAY c:
+    // EDITED, SORRY, I HAD TO c:
     for (std::vector<Channel *>::iterator it = channels.begin(); it != channels.end(); it++) {\
         Channel *channel = *it;
+        // deleting deleted clients from _operators
         for (std::vector<Client *>::iterator _it = channel->_operators.begin(); _it != channel->_operators.end(); _it++)
             if (*_it == all_clients[i - 1])
                 channel->_operators.erase(_it--);
         for (std::vector<Client *>::iterator _it = channel->_members.begin(); _it != channel->_members.end(); _it++) {
+            // delete him from channel
             if (*_it == all_clients[i - 1]) {
                 channel->_members.erase(_it--);
+                // delete channel if empty
                 if (!channel->_members.size()) {
                     delete channel;
                     channels.erase(it--);
                 }
             }
+            // inform channel members that he left
+            else
+                (*_it)->send(":" + all_clients[i - 1]->_nickName + " QUIT :Quit: " + all_clients[i - 1]->_leaveMessage + "\r\n");
         }
     }
     //
