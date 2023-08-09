@@ -12,6 +12,8 @@ Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorize
 	_commands.insert(std::make_pair("JOIN", &Client::join)); // (basic use + multiple channels at a time works, with or without passwords)
 	_commands.insert(std::make_pair("PRIVMSG", &Client::privmsg)); // (DM, channels, OP only messages)
 	_commands.insert(std::make_pair("PART", &Client::part)); // (complete)
+	_commands.insert(std::make_pair("KICK", &Client::kick)); // (complete)
+	_commands.insert(std::make_pair("MODE", &Client::mode)); // (complete)
 	_commands.insert(std::make_pair("QUIT", &Client::quit)); // (complete)
 
 }
@@ -22,6 +24,7 @@ int Client::getFd(void) {
 
 // this will send a message to the client
 void Client::send(std::string msg) {
+	// msg = ":irc.strix.moe" + msg;
 	::send(_clientFd, msg.c_str(), msg.length(), 0);
 }
 

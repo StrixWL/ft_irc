@@ -66,6 +66,8 @@ class Client {
 		void join(std::string &commandLine);
 		void privmsg(std::string &commandLine);
 		void part(std::string &commandLine);
+		void kick(std::string &commandLine);
+		void mode(std::string &commandLine);
 		void quit(std::string &commandLine);
 };
 

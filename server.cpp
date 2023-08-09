@@ -180,6 +180,7 @@ server::~server(){
 
 int main(int arc, char **arv)
 {
+    std::cout << getpid() << std::endl;
     if (arc != 3)
     {
         logger.error("the executable run as follows: ./ircserv <port> <password>");

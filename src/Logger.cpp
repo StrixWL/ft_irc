@@ -26,6 +26,7 @@ std::string getTime() {
 	std::string second = std::to_string(timeinfo->tm_sec);
 	second = second.length() == 2 ? second : "0" + second;
 	return ((hour.length() == 2 ? hour : "0" + hour) + ":" + minute + ":" + second);
+	return "-";
 }
 
 void Logger::debug(std::string message) {

@@ -3,18 +3,36 @@
 #include <Server.hpp>
 #include "Channel.hpp"
 
+std::vector<std::string> getArgs(std::string commandLine) {
+	std::vector<std::string> args;
+	while (commandLine.length()) {
+		std::string nextArg;
+		if (commandLine[0] == ':') {
+			commandLine.erase(0, 1);
+			nextArg = commandLine;
+		}
+		else
+			nextArg = commandLine.substr(0, commandLine.find(" "));
+		commandLine.erase(0, nextArg.length());
+		while (commandLine[0] == ' ')
+			commandLine.erase(0, 1);
+		if (nextArg.length())
+			args.push_back(nextArg);
+	}
+	return args;
+}
+
 void Client::pass(std::string &commandLine) { // 100% finished
+	std::vector<std::string> args = getArgs(commandLine);
 	// no params
-	if (!commandLine.length())
+	if (!args.size())
 		logger.warn("461 " + _nickName + " :Not enough parameters");
 	// cringe ":" took me an hour to debug
-	if (commandLine[0] == ':')
-		commandLine.erase(0, 1);
-	_password = commandLine;
-	logger.info("password set to : [" + commandLine + "]");
+	_password = args[0];
+	logger.info("password set to : [" + _password + "]");
 	_authorized = true;
 	// comparing outputted pw with server pw
-	if (commandLine != PASSWORD) {
+	if (_password != PASSWORD) {
 		// nn hh
 		_authorized = false;
 		std::string e = "464 " + _nickName + " :Password incorrect";
@@ -27,31 +45,27 @@ void Client::pass(std::string &commandLine) { // 100% finished
 }
 
 void Client::nick(std::string &commandLine) { // 100% finished
-	// not this time 
-	if (commandLine[0] == ':')
-		commandLine.erase(0, 1);
-	else // take all characters until space
-		commandLine = commandLine.substr(0, commandLine.find(" "));
+	std::vector<std::string> args = getArgs(commandLine);
 	// no params
-	if (!commandLine.length())
+	if (!args.size())
 		logger.warn("431 " + _nickName + " :No nickname given");
 	// check for forbidden chars
-	for (std::string::iterator it = commandLine.begin(); it != commandLine.end(); it++) {
+	for (std::string::iterator it = args[0].begin(); it != args[0].end(); it++) {
 		if (std::string("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-[]\\`^{}_|").find(*it) == std::string::npos)
-			logger.warn("432 " + _nickName + " " + commandLine + " :Erroneus nickname");
+			logger.warn("432 " + _nickName + " " + args[0] + " :Erroneus nickname");
 	}
 	//check if nickname alredy exist
 	bool alreadyExist = false;
 	for (std::vector<Client *>::iterator it = irc_server.all_clients.begin(); it != irc_server.all_clients.end(); it++) {
-		if ((*it)->_nickName == commandLine) {
+		if ((*it)->_nickName == args[0]) {
 			alreadyExist = true;
 			break ;
 		}
 	}
 	if (!alreadyExist) {
 		std::string oldNick = _nickName;
-		_nickName = commandLine;
-		logger.info("nickname to set: [" + commandLine + "]");
+		_nickName = args[0];
+		logger.info("nickname to set: [" + args[0] + "]");
 		if (oldNick != "*") {
 			// broadcast nickname change to all clients
 			for (std::vector<Client *>::iterator it = irc_server.all_clients.begin(); it != irc_server.all_clients.end(); it++)
@@ -59,7 +73,7 @@ void Client::nick(std::string &commandLine) { // 100% finished
 		}
 	}
 	else
-		logger.warn("433 " + _nickName + " " + commandLine + " :Nickname is already in use");
+		logger.warn("433 " + _nickName + " " + args[0] + " :Nickname is already in use");
 	// we dont knoe which auth command will be executed the last so everytime we check whether we have the conditions
 		// to authorize the client or not
 	if (_userName.length() && _realName.length() && _nickName != "*" && _authorized)
@@ -67,22 +81,13 @@ void Client::nick(std::string &commandLine) { // 100% finished
 }
 
 void Client::user(std::string &commandLine) { // 100% finished
-	// just simple repetitive parsing, we dont need the 2nd and 3rd arg, 1st is username and 4th is realname
-	std::string userName = commandLine.substr(0, commandLine.find(" "));
-	commandLine.erase(0, userName.length());
-	while (commandLine[0] == ' ')
-		commandLine.erase(0, 1);
-	std::string zero = commandLine.substr(0, commandLine.find(" "));
-	commandLine.erase(0, zero.length());
-	while (commandLine[0] == ' ')
-		commandLine.erase(0, 1);
-	std::string asterisk = commandLine.substr(0, commandLine.find(" ")); // asterisk is the character '*'
-	commandLine.erase(0, asterisk.length());
-	while (commandLine[0] == ' ')
-		commandLine.erase(0, 1);
-	std::string realName = commandLine;
-	if (!zero.length() || !asterisk.length() || !userName.length() || !realName.length())
+	std::vector<std::string> args = getArgs(commandLine);
+	if (args.size() != 4)
 		logger.warn("461 " + _nickName + " " + commandLine + " :Not enough parameters");
+	std::string userName = args[0];
+	std::string zero = args[1];
+	std::string asterisk = args[2];
+	std::string realName = args[3];
 	_userName = userName;
 	logger.verbose("username set to " + _userName);
 	_realName = realName;
@@ -105,44 +110,33 @@ void Client::welcome(void) {
 }
 
 void Client::join(std::string &commandLine) {
-	// is used to know whether we are dealing with the first time join function is called for a commandline or not
+	std::vector<std::string> args = getArgs(commandLine);
 	static bool isFirst = true;
-	static std::string passwords = "";
+	if (!args.size())
+		logger.warn("461 " + _nickName + " JOIN :Not enough parameters");
+	std::string channels = args[0];
+	std::string passwords = (args.size() >= 2) ? args[1] : "";
 	if (isFirst) {
-		if (commandLine[0] == ':') { // + WE SURE THERE ARE NO PASSWORDS
-			commandLine.erase(0, 1);
-			passwords = "";
-		}
-		else { // passwords COULD exist
-			if (commandLine.find(" ") != std::string::npos) {
-				// all chars after the first " " are passwords, if there is more than 1 password they d be seperated by commas ","
-				passwords = commandLine.substr(commandLine.find(" ") + 1, commandLine.length());
-				if (passwords[0] == ':')
-					passwords.erase(0, 1);
-				commandLine = commandLine.substr(0, commandLine.find(" "));
-			} 
-			else
-				passwords = "";
+		while (channels.find(",") != std::string::npos) {
+			std::string nextChannel = channels.substr(0, channels.find(","));
+			channels.erase(0, nextChannel.length() + 1);
+			std::string nextPassword = passwords.substr(0, passwords.find(","));
+			passwords.erase(0, nextPassword.length() + 1);
+			std::string nextCall = nextChannel + " " + nextPassword;
+			isFirst = false;
+			join(nextCall);
+			isFirst = true;
 		}
 	}
-	// handle multiple channels instead of just one using recursion
-	while (commandLine.find(",") != std::string::npos) {
-		std::string nextChannel = commandLine.substr(0, commandLine.find(","));
-		// we set it to false, this time when we call join it will know that it is not being called for the first time in this specific commandline
-		isFirst = false;
-		join(nextChannel);
-		// we set it again to true so that the it will be true when we call it on the next commandline for the first time
-		isFirst = true;
-		commandLine = commandLine.erase(0, commandLine.find(",") + 1);
-	}
+	// multi shit stops here
 	// inside try catch block so that we dont interrupt joining the remaining channels
 	try {
 		// channel names MUST not have white spaces
-		if (commandLine.find(" ") != std::string::npos)
-			logger.warn("476 " + _userName + " " + commandLine + " :Invalid channel name");
+		if (channels.find(" ") != std::string::npos)
+			logger.warn("476 " + _userName + " " + channels + " :Invalid channel name");
 		// channel names MUST start with #
-		if (commandLine[0] != '#') {
-			logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
+		if (channels[0] != '#') {
+			logger.warn("403 " + _userName + " " + channels + " :No such channel");
 	}
 	} catch(std::exception &e) {
 		send(e.what());
@@ -150,19 +144,16 @@ void Client::join(std::string &commandLine) {
 	}
 	// we check if channel already exist, if it does, add user to the channel, if not, create new channel
 	for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
-		if ((*it)->_name == commandLine) {
+		if ((*it)->_name == channels) {
 			// i legit have no clue what am i doing at this point
 			if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end()) {
 				// do nothing if member already part of the channel
 				return ;
 			}
-			// take one password from the passwords string
-			std::string enteredPW = passwords.substr(0, passwords.find(","));
-			passwords.erase(0, enteredPW.length() + 1);
 			try {
 				// check if pw match, if not, return wrong pw
-				if (enteredPW != (*it)->_password)
-					logger.warn("475 " + _nickName + " " + commandLine + " :Cannot join channel (+k) - bad key");
+				if (passwords != (*it)->_password)
+					logger.warn("475 " + _nickName + " " + channels + " :Cannot join channel (+k) - bad key");
 			} catch (std::exception &e) {
 				send(e.what());
 				return ;
@@ -170,7 +161,7 @@ void Client::join(std::string &commandLine) {
 			// add user to existing channel members
 			(*it)->_members.push_back(this);
 			// inform everyone that user has joined
-			(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + commandLine + "\r\n");
+			(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + channels + "\r\n");
 			// send list of all existing members in that channel
 			send("353 " + _nickName + " = " + (*it)->_name + " :" + (*it)->getNames() + "\r\n");
 			send("366 " + _nickName + " " + (*it)->_name + " :End of /NAMES list.\r\n");
@@ -178,129 +169,142 @@ void Client::join(std::string &commandLine) {
 		}
 	}
 	// creating new channel since it doesnt exist already
-	Channel *newChannel = new Channel(commandLine);
+	Channel *newChannel = new Channel(channels);
 	irc_server.channels.push_back(newChannel);
 	// add user to channel members + operators
 	newChannel->_members.push_back(this);
 	newChannel->_operators.push_back(this);
 	// inform everyone that user has joined
-	newChannel->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + commandLine + "\r\n");
+	newChannel->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + channels + "\r\n");
 	// send list of all existing members in that channel
 	send("353 " + _nickName + " = " + newChannel->_name + " :" + newChannel->getNames() + "\r\n");
 	send("366 " + _nickName + " " + newChannel->_name + " :End of /NAMES list.\r\n");
 }
 
 void Client::privmsg(std::string &commandLine) {
+	std::vector<std::string> args = getArgs(commandLine);
+	if (args.size() <= 1)
+		return ;
+	std::string channel = args[0];
+	std::string message = args[1];
 	bool onlyOP = false;
 	bool isChannel;
 	// only operators will be able to see :O
-	if (commandLine[0] == '@') {
+	if (channel[0] == '@') {
 		// to handle op only messages
 		onlyOP = true;
-		commandLine.erase(0, 1);
+		channel.erase(0, 1);
 	}
 	// channel stuff
-	if (commandLine[0] == '#') {
+	if (channel[0] == '#') {
 		// find channel
 		for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
 			// parse channel and message that we should broadcast
-			std::string channel = commandLine.substr(0, commandLine.find(" "));
-			std::string message = commandLine;
-			message.erase(0, channel.length());
-			while (message[0] == ' ')
-				message.erase(0, 1);
 			if ((*it)->_name == channel) {
 				// channel found
 				if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end())
 					// user is member of that channel
 					if (onlyOP) // broadcast to only channel operators instead of everyone
-						(*it)->broadcastOP(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PRIVMSG " + channel + " " + message + "\r\n", this);
+						(*it)->broadcastOP(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PRIVMSG " + channel + " :" + message + "\r\n", this);
 					else
-						(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PRIVMSG " + channel + " " + message + "\r\n", this);
+						(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PRIVMSG " + channel + " :" + message + "\r\n", this);
 				else
 					send("404 " + _nickName + " " + channel + " :Cannot send to nick/channel\r\n");
 				return ;
 			}
 		}
-		logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
+		logger.warn("403 " + _userName + " " + channel + " :No such channel");
 	}
 	// DM stuff
 	else {
-		std::string receiver = commandLine.substr(0, commandLine.find(" "));
-		commandLine.erase(0, receiver.length());
-		while (commandLine[0] == ' ')
-			commandLine.erase(0, 1);
-		std::string message = commandLine;
 		// loop through all clients, if not found, return 401
 		for (std::vector<Client *>::iterator it = irc_server.all_clients.begin(); it != irc_server.all_clients.end(); it++) {
-			if ((*it)->_nickName == receiver) {
-				// :nickname PRIVMSG receiver :message
-				(*it)->send(":" + _nickName + " PRIVMSG " + receiver + " :" + message + "\r\n");
+			if ((*it)->_nickName == channel) {
+				// :nickname PRIVMSG channel :message
+				(*it)->send(":" + _nickName + " PRIVMSG " + channel + " :" + message + "\r\n");
 				return ;
 			}
 		}
-		logger.warn("401 " + _nickName + " " + receiver + " :No such nick");
+		logger.warn("401 " + _nickName + " " + channel + " :No such nick");
 	}
 }
 
 void Client::part(std::string &commandLine) {
-	// is used to know whether we are dealing with the first time join function is called for a commandline or not
+	std::vector<std::string> args = getArgs(commandLine);
 	static bool isFirst = true;
-	static std::string leaveMessage = "";
+	if (!args.size())
+		logger.warn("461 " + _nickName + " JOIN :Not enough parameters");
+	std::string channels = args[0];
+	std::string leaveMessage = (args.size() >= 2) ? args[1] : "";
 	if (isFirst) {
-		if (commandLine[0] == ':') // + WE SURE HERE THERE IS NO LEAVING MESSAGE
-			commandLine.erase(0, 1);
-		else { // leaving message COULD exist and its everything after the first " "
-			if (commandLine.find(" ") != std::string::npos) {
-				leaveMessage = commandLine.substr(commandLine.find(" ") + 1, commandLine.length());
-			}
-			commandLine = commandLine.substr(0, commandLine.find(" "));
+		while (channels.find(",") != std::string::npos) {
+			std::string nextChannel = channels.substr(0, channels.find(","));
+			channels.erase(0, nextChannel.length() + 1);
+			std::string nextCall = nextChannel + " " + leaveMessage;
+			isFirst = false;
+			part(nextCall);
+			isFirst = true;
 		}
 	}
-	// handle multiple channels instead of just one using recursion
-	while (commandLine.find(",") != std::string::npos) {
-		std::string nextChannel = commandLine.substr(0, commandLine.find(","));
-		// we set it to false, this time when we call join it will know that it is not being called for the first time in this specific commandline
-		isFirst = false;
-		part(nextChannel);
-		// we set it again to true so that the it will be true when we call it on the next commandline for the first time
-		isFirst = true;
-		commandLine = commandLine.erase(0, commandLine.find(",") + 1);
-	}
+	// multi shit starts here
 	try {
 		// channel names MUST not have white spaces
-		if (commandLine.find(" ") != std::string::npos)
-			logger.warn("476 " + _userName + " " + commandLine + " :Invalid channel name");
+		if (channels.find(" ") != std::string::npos)
+			logger.warn("476 " + _userName + " " + channels + " :Invalid channel name");
 		// channel names MUST start with #
-		if (commandLine[0] != '#') {
-			logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
-	}
+		if (channels[0] != '#')
+			logger.warn("403 " + _userName + " " + channels + " :No such channel");
+		for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
+					(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PART " + channels + " " + leaveMessage + "\r\n");
+			if ((*it)->_name == channels) {
+				// i legit have no clue what am i doing at this point
+				if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end()) {
+					// IS PART OF THE CHANNEL
+					// erase
+					(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PART " + channels + " " + leaveMessage + "\r\n");
+					// the first function execution will execute the last chained channel, means this part will be executed the last, we use it to reset our leaveMessage cuz it is static!
+					(*it)->_members.erase(std::find((*it)->_members.begin(), (*it)->_members.end(), this));
+					if (!(*it)->_members.size()) {
+						delete *it;
+						irc_server.channels.erase(it);
+					}
+					return ;
+				}
+				logger.warn("403 " + _userName + " " + channels + " :No such channel");
+			}
+		}	
+		logger.warn("403 " + _userName + " " + channels + " :No such channel");
 	} catch(std::exception &e) {
 		send(e.what());
 		return ;
 	}
+
 	// we check if channel already exist, if it does, add user to the channel, if not, create new channel
-	for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
-		if ((*it)->_name == commandLine) {
-			// i legit have no clue what am i doing at this point
-			if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end()) {
-				// IS PART OF THE CHANNEL
-				// erase
-				(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PART " + commandLine + " " + leaveMessage + "\r\n");
-				// the first function execution will execute the last chained channel, means this part will be executed the last, we use it to reset our leaveMessage cuz it is static!
-				if (isFirst)
-					leaveMessage = "";
-				(*it)->_members.erase(std::find((*it)->_members.begin(), (*it)->_members.end(), this));
-				if (!(*it)->_members.size()) {
-					delete *it;
-					irc_server.channels.erase(it);
-				}
-				return ;
-			}
-			logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
-		}
+	
+}
+
+void Client::kick(std::string &commandLine) { // still under construction
+	std::vector<std::string> args = getArgs(commandLine);
+	for (std::vector<std::string>::iterator it = args.begin(); it != args.end(); it++) {
+		logger.debug(*it);
 	}
-	logger.warn("403 " + _userName + " " + commandLine + " :No such channel");
+	return ;
+	if (commandLine[0] == ':')
+		logger.warn("461 " + _userName + " KICK :Not enough parameters");
+	std::string channels = commandLine.substr(0, commandLine.find(" "));
+	commandLine.erase(0, channels.length());
+	while (commandLine[0] == ' ')
+		commandLine.erase(0, 1);
+	std::string users = commandLine.substr(0, commandLine.find(" "));
+	commandLine.erase(0, users.length());
+	while (commandLine[0] == ' ')
+		commandLine.erase(0, 1);
+	std::string reason = commandLine.substr(0, commandLine.find(" "));
+	commandLine.erase(0, reason.length());
+}
+
+void Client::mode(std::string &commandLine) {
+		
 }
 
 void Client::quit(std::string &commandLine) {
