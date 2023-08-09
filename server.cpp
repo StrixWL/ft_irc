@@ -35,8 +35,9 @@ void server::start(char *port, char *password)
 void server::handle_new_conection()
 {
     int fd;
-
-    fd = accept(this->server_fd, NULL, NULL);
+    struct sockaddr_in addr;
+    socklen_t len = sizeof(addr);
+    fd = accept(this->server_fd, (struct sockaddr *)&addr, &len);
     if (fd < 0)
     {
         logger.error("Error accepting a new connection");
@@ -49,8 +50,10 @@ void server::handle_new_conection()
     }
     pollfd pd = {fd, POLLIN, 0};
     this->p_fd.push_back(pd);
+    char *client_ip;
 
     Client *my_client = new Client(fd);
+    my_client->_IPAddress = inet_ntoa(addr.sin_addr);
     this->all_clients.push_back(my_client);
     logger.info("a new client has connected");
 }

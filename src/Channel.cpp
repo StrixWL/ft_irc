@@ -1,6 +1,6 @@
 #include "Channel.hpp"
 
-Channel::Channel(std::string &name): _name(name) {
+Channel::Channel(std::string &name): _name(name), _password("321") {
 }
 
 // broadcast to all members
@@ -16,7 +16,14 @@ void Channel::broadcast(std::string message, Client *broadcaster) {
 			(*it)->send(message);
 }
 
-// _members.map(e => _operators.includes(e) ? "@" + e : e).join(" ");
+// broadcast to operators except the broadcaster
+void Channel::broadcastOP(std::string message, Client *broadcaster) {
+	for (std::vector<Client *>::iterator it = _operators.begin(); it != _operators.end(); it++)
+		if (*it != broadcaster)
+			(*it)->send(message);
+}
+
+// return _members.map(e => _operators.includes(e) ? "@" + e : e).join(" ");
 std::string Channel::getNames(void) {
 	std::string names = "";
 	for (std::vector<Client *>::iterator it = _members.begin(); it != _members.end(); it++)

@@ -5,14 +5,14 @@
 // I USE logger.warn TO SEND ERROR MESSAGES BACK TO THE CLIENT CHECK Client.hpp/Logger.hpp
 
 // these are the commands
-Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorized(false), _registered(false), _keepAlive(true), logger(client_fd) {
+Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorized(false), _registered(false), _welcomed(false), _keepAlive(true), logger(client_fd) {
 	_commands.insert(std::make_pair("USER", &Client::user)); // (complete)
 	_commands.insert(std::make_pair("PASS", &Client::pass)); // (complete)
 	_commands.insert(std::make_pair("NICK", &Client::nick)); // (complete)
-	_commands.insert(std::make_pair("JOIN", &Client::join));
-	_commands.insert(std::make_pair("PRIVMSG", &Client::privmsg));
-	_commands.insert(std::make_pair("QUIT", &Client::quit));
-	_IPAddress = "10.30.232.119";
+	_commands.insert(std::make_pair("JOIN", &Client::join)); // (basic use + multiple channels at a time works, with or without passwords)
+	_commands.insert(std::make_pair("PRIVMSG", &Client::privmsg)); // (DM, channels, OP only messages)
+	_commands.insert(std::make_pair("PART", &Client::part)); // (complete)
+	_commands.insert(std::make_pair("QUIT", &Client::quit)); // (complete)
 
 }
 

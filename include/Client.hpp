@@ -10,7 +10,6 @@
 #include <Logger.hpp>
 
 #define PASSWORD "123"
-#define PORT 6667
 
 class Client {
 	// bai bai old logger, each client will have its own logger now
@@ -51,6 +50,8 @@ class Client {
 		bool _authorized;
 		// registered means client entered correct password, a valid nickname, username and realname 
 		bool _registered;
+		// welcomed means this used was registered before and welcomed, used so that we dont send welcome messages everytime user changes nick
+		bool _welcomed;
 		Client::Logger logger;
 	public:
 		bool _keepAlive;
@@ -64,6 +65,7 @@ class Client {
 		void user(std::string &commandLine);
 		void join(std::string &commandLine);
 		void privmsg(std::string &commandLine);
+		void part(std::string &commandLine);
 		void quit(std::string &commandLine);
 };
 
