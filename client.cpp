@@ -94,7 +94,6 @@ int main() {
     send(clientSocket, s.c_str(), s.length(), 0);
     s = "PASS 123\r\n";
     send(clientSocket, s.c_str(), s.length(), 0);
-    std::cout << "hhh" << std::endl;
     // Send and receive messages
     char buffer[BUFFER_SIZE];
     while (true) {
