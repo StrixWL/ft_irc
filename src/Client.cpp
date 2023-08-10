@@ -9,11 +9,12 @@ Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorize
 	_commands.insert(std::make_pair("USER", &Client::user)); // (complete)
 	_commands.insert(std::make_pair("PASS", &Client::pass)); // (complete)
 	_commands.insert(std::make_pair("NICK", &Client::nick)); // (complete)
-	_commands.insert(std::make_pair("JOIN", &Client::join)); // (basic use + multiple channels at a time works, with or without passwords)
-	_commands.insert(std::make_pair("PRIVMSG", &Client::privmsg)); // (DM, channels, OP only messages)
+	_commands.insert(std::make_pair("JOIN", &Client::join)); // (complete)
+	_commands.insert(std::make_pair("PRIVMSG", &Client::privmsg)); // (complete)
 	_commands.insert(std::make_pair("PART", &Client::part)); // (complete)
 	_commands.insert(std::make_pair("KICK", &Client::kick)); // (complete)
 	_commands.insert(std::make_pair("MODE", &Client::mode)); // (complete)
+	_commands.insert(std::make_pair("INVITE", &Client::invite)); // (complete)
 	_commands.insert(std::make_pair("QUIT", &Client::quit)); // (complete)
 
 }

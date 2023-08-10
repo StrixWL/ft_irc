@@ -68,6 +68,7 @@ class Client {
 		void part(std::string &commandLine);
 		void kick(std::string &commandLine);
 		void mode(std::string &commandLine);
+		void invite(std::string &commandLine);
 		void quit(std::string &commandLine);
 };
 

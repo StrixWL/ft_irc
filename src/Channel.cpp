@@ -1,11 +1,10 @@
 #include "Channel.hpp"
 
-Channel::Channel(std::string &name): _name(name), _password("321") {
+Channel::Channel(std::string &name): _name(name), _password("321"), _inviteOnly(true) {
 }
 
 // broadcast to all members
 void Channel::broadcast(std::string message) {
-	std::cout << "members size: " << _members.size() << std::endl;
 	for (std::vector<Client *>::iterator it = _members.begin(); it != _members.end(); it++)
 		(*it)->send(message);
 }

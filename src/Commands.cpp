@@ -27,7 +27,7 @@ std::vector<std::string> getArgs(std::string commandLine) {
 	return args;
 }
 
-void Client::pass(std::string &commandLine) { // 100% finished
+void Client::pass(std::string &commandLine) {
 	std::vector<std::string> args = getArgs(commandLine);
 	// no params
 	if (!args.size())
@@ -48,7 +48,7 @@ void Client::pass(std::string &commandLine) { // 100% finished
 		welcome();
 }
 
-void Client::nick(std::string &commandLine) { // 100% finished
+void Client::nick(std::string &commandLine) {
 	std::vector<std::string> args = getArgs(commandLine);
 	// no params
 	if (!args.size())
@@ -84,7 +84,7 @@ void Client::nick(std::string &commandLine) { // 100% finished
 		welcome();
 }
 
-void Client::user(std::string &commandLine) { // 100% finished
+void Client::user(std::string &commandLine) {
 	std::vector<std::string> args = getArgs(commandLine);
 	// check for params
 	if (args.size() != 4)
@@ -111,7 +111,7 @@ void Client::welcome(void) {
 	_welcomed = true;
 	_registered = true;
 	// sending welcome message is required so that users can do stuff in the server
-	send("001 " + _nickName + " :Welcome to the Strix Internet Relay Chat Network " + _nickName + "\r\n");
+	send("001 " + _nickName + " :Welcome to our Internet Relay Chat Network " + _nickName + " ^_^\r\n");
 	logger.info("User \033[1m" + _nickName + "\033[0m authorized.");
 }
 
@@ -155,15 +155,22 @@ void Client::join(std::string &commandLine) {
 				return ;
 			}
 			try {
+				// check for key first, then invite
 				// check if pw match, if not, return wrong pw
 				if (passwords != (*it)->_password)
 					logger.warn("475 " + _nickName + " " + channels + " :Cannot join channel (+k) - bad key");
+				// check if _inviteOnly is true, check if _userName exists in invitees list
+				if ((*it)->_inviteOnly && (std::find((*it)->_invitees.begin(), (*it)->_invitees.end(), this) == (*it)->_invitees.end()))
+					logger.warn("473 " + _nickName + " " + channels + " :Cannot join channel (+i) - you must be invited");
+
 			} catch (std::exception &e) {
 				send(e.what());
 				return ;
 			}
 			// add user to existing channel members
 			(*it)->_members.push_back(this);
+			if (std::find((*it)->_invitees.begin(), (*it)->_invitees.end(), this) != (*it)->_invitees.end())
+				(*it)->_invitees.erase(std::find((*it)->_invitees.begin(), (*it)->_invitees.end(), this));
 			// inform everyone that user has joined
 			(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + channels + "\r\n");
 			// send list of all existing members in that channel
@@ -243,7 +250,7 @@ void Client::privmsg(std::string &commandLine) {
 void Client::part(std::string &commandLine) {
 	std::vector<std::string> args = getArgs(commandLine);
 	if (!args.size())
-		logger.warn("461 " + _nickName + " JOIN :Not enough parameters");
+		logger.warn("461 " + _nickName + " PART :Not enough parameters");
 	std::string channels = args[0];
 	std::string leaveMessage = (args.size() >= 2) ? args[1] : "";
 	// to handle multiple channels, like JOIN
@@ -266,7 +273,6 @@ void Client::part(std::string &commandLine) {
 				if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end()) {
 					// IS PART OF THE CHANNEL
 					(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PART " + channels + " " + leaveMessage + "\r\n");
-					// the first function execution will execute the last chained channel, means this part will be executed the last, we use it to reset our leaveMessage cuz it is static!
 					(*it)->_members.erase(std::find((*it)->_members.begin(), (*it)->_members.end(), this));
 					if (!(*it)->_members.size()) {
 						delete *it;
@@ -286,9 +292,8 @@ void Client::part(std::string &commandLine) {
 
 void Client::kick(std::string &commandLine) {
 	std::vector<std::string> args = getArgs(commandLine);
-	static bool isFirst = true;
 	if (args.size() < 2)
-		logger.warn("461 " + _nickName + " :Not enough parameters");
+		logger.warn("461 " + _nickName + " :KICK Not enough parameters");
 	std::string channel = args[0];
 	std::string users = args[1];
 	// BTW users could be multiple users and could be only 1 user as well, its always 1 user while in recursive execution
@@ -319,7 +324,7 @@ void Client::kick(std::string &commandLine) {
 			for (std::vector<Client *>::iterator _it = (*it)->_members.begin(); _it != (*it)->_members.end(); _it++) {
 				if ((*_it)->_nickName == users) {
 					// user found
-					// broadcast kick message to all members (we let everyone know users mcha y9awed)
+					// broadcast kick message to all members
 					(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " KICK " + channel + " " + users + " :" + reason + "\r\n");
 					(*it)->_members.erase(_it);
 					if (!(*it)->_members.size()) {
@@ -336,7 +341,50 @@ void Client::kick(std::string &commandLine) {
 	logger.warn("403 " + _nickName + " " + channel + " :No such channel");
 }
 
+// soon :3
 void Client::mode(std::string &commandLine) {
+}
+
+void Client::invite(std::string &commandLine) {
+	std::vector<std::string> args = getArgs(commandLine);
+	if (args.size() < 2)
+		logger.warn("461 " + _nickName + " :Not enough parameters");
+	std::string invitee = args[0];
+	std::string channel = args[1];
+	Client *inviteeObj = NULL;
+	Channel *channelObj = NULL;
+	// check if user exist
+	for (std::vector<Client *>::iterator it = irc_server.all_clients.begin(); it != irc_server.all_clients.end(); it++) {
+		if ((*it)->_nickName == invitee) {
+			// user found
+			inviteeObj = *it;
+			break ;
+		}
+	}
+	if (!inviteeObj)
+		logger.warn("401 " + _nickName + " " + invitee + " :No such nick/channel");
+	// check if channel exist
+	for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
+		if ((*it)->_name == channel) {
+			// channel found
+			channelObj = *it;
+			break ;
+		}
+	}
+	if (!channelObj)
+		logger.warn("403 " + _nickName + " " + channel + " :No such channel");
+	// check if inviter is not in channel
+	if (std::find(channelObj->_members.begin(), channelObj->_members.end(), this) == channelObj->_members.end())
+		logger.warn("442 " + _nickName + " " + channel + " :You're not on that channel");
+	// check if invitee is in channel already
+	if (std::find(channelObj->_members.begin(), channelObj->_members.end(), inviteeObj) != channelObj->_members.end())
+		logger.warn("443 " + _nickName + " " + invitee + " " + channel + " :is already on channel");
+	// add invitee to channel invitees list
+	channelObj->_invitees.push_back(inviteeObj);
+	// inform invitee he has been invited
+	inviteeObj->send(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " INVITE " + invitee + " :" + channel + "\r\n");
+	// inform inviter he invited invitee
+	send("341 " + _nickName + " " + invitee + " " + channel + "\r\n");
 }
 
 void Client::quit(std::string &commandLine) {
@@ -347,5 +395,4 @@ void Client::quit(std::string &commandLine) {
 	_keepAlive = false;
 }
 
-// Error(474): #e Cannot join channel (+b) - you are banned bruhh (i literally got banned from a public IRC server channel cuz i was spam testing commands lmao)
 // brojola hadshi tl3li frassi hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhelpmepleasehhhhhhhhhhhhhhhhhhhhhh
