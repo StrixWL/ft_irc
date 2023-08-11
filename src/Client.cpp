@@ -13,10 +13,10 @@ Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorize
 	_commands.insert(std::make_pair("PRIVMSG", &Client::privmsg)); // (complete)
 	_commands.insert(std::make_pair("PART", &Client::part)); // (complete)
 	_commands.insert(std::make_pair("KICK", &Client::kick)); // (complete)
-	_commands.insert(std::make_pair("MODE", &Client::mode)); // (complete)
+	_commands.insert(std::make_pair("MODE", &Client::mode));
 	_commands.insert(std::make_pair("INVITE", &Client::invite)); // (complete)
+	_commands.insert(std::make_pair("TOPIC", &Client::topic));
 	_commands.insert(std::make_pair("QUIT", &Client::quit)); // (complete)
-
 }
 
 int Client::getFd(void) {
@@ -30,6 +30,8 @@ void Client::send(std::string msg) {
 }
 
 void Client::execute(std::string commandLine) {
+	if (!commandLine.length())
+		return ;
 	logger.debug("Executing command line: [" + commandLine + "]");
 	// parse the command, first word before a space
 	std::string command = commandLine.substr(0, commandLine.find(" "));

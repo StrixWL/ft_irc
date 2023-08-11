@@ -137,10 +137,10 @@ void Client::join(std::string &commandLine) {
 	try {
 		// channel names MUST not have white spaces
 		if (channels.find(" ") != std::string::npos)
-			logger.warn("476 " + _userName + " " + channels + " :Invalid channel name");
+			logger.warn("476 " + _nickName + " " + channels + " :Invalid channel name");
 		// channel names MUST start with #
 		if (channels[0] != '#') {
-			logger.warn("403 " + _userName + " " + channels + " :No such channel");
+			logger.warn("403 " + _nickName + " " + channels + " :No such channel");
 	}
 	} catch(std::exception &e) {
 		send(e.what());
@@ -159,7 +159,7 @@ void Client::join(std::string &commandLine) {
 				// check if pw match, if not, return wrong pw
 				if (passwords != (*it)->_password)
 					logger.warn("475 " + _nickName + " " + channels + " :Cannot join channel (+k) - bad key");
-				// check if _inviteOnly is true, check if _userName exists in invitees list
+				// check if _inviteOnly is true, check if _nickName exists in invitees list
 				if ((*it)->_inviteOnly && (std::find((*it)->_invitees.begin(), (*it)->_invitees.end(), this) == (*it)->_invitees.end()))
 					logger.warn("473 " + _nickName + " " + channels + " :Cannot join channel (+i) - you must be invited");
 
@@ -173,9 +173,13 @@ void Client::join(std::string &commandLine) {
 				(*it)->_invitees.erase(std::find((*it)->_invitees.begin(), (*it)->_invitees.end(), this));
 			// inform everyone that user has joined
 			(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " JOIN " + channels + "\r\n");
+			// send topic channel on join
+			if ((*it)->_topic.length())
+				send("332 " + _nickName + " " + (*it)->_name + " :" + (*it)->_topic + "\r\n");
 			// send list of all existing members in that channel
 			send("353 " + _nickName + " = " + (*it)->_name + " :" + (*it)->getNames() + "\r\n");
 			send("366 " + _nickName + " " + (*it)->_name + " :End of /NAMES list.\r\n");
+			
 			return ;
 		}
 	}
@@ -231,7 +235,7 @@ void Client::privmsg(std::string &commandLine) {
 				return ;
 			}
 		}
-		logger.warn("403 " + _userName + " " + channel + " :No such channel");
+		logger.warn("403 " + _nickName + " " + channel + " :No such channel");
 	}
 	// DM stuff
 	else {
@@ -263,10 +267,10 @@ void Client::part(std::string &commandLine) {
 	try {
 		// channel names MUST not have white spaces
 		if (channels.find(" ") != std::string::npos)
-			logger.warn("476 " + _userName + " " + channels + " :Invalid channel name");
+			logger.warn("476 " + _nickName + " " + channels + " :Invalid channel name");
 		// channel names MUST start with #
 		if (channels[0] != '#')
-			logger.warn("403 " + _userName + " " + channels + " :No such channel");
+			logger.warn("403 " + _nickName + " " + channels + " :No such channel");
 		for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
 			if ((*it)->_name == channels) {
 				// i legit have no clue what am i doing at this point
@@ -280,10 +284,10 @@ void Client::part(std::string &commandLine) {
 					}
 					return ;
 				}
-				logger.warn("403 " + _userName + " " + channels + " :No such channel");
+				logger.warn("403 " + _nickName + " " + channels + " :No such channel");
 			}
 		}	
-		logger.warn("403 " + _userName + " " + channels + " :No such channel");
+		logger.warn("403 " + _nickName + " " + channels + " :No such channel");
 	} catch(std::exception &e) {
 		send(e.what());
 		return ;
@@ -385,6 +389,43 @@ void Client::invite(std::string &commandLine) {
 	inviteeObj->send(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " INVITE " + invitee + " :" + channel + "\r\n");
 	// inform inviter he invited invitee
 	send("341 " + _nickName + " " + invitee + " " + channel + "\r\n");
+}
+
+void Client::topic(std::string &commandLine) {
+	std::vector<std::string> args = getArgs(commandLine);
+	if (!args.size())
+		logger.warn("461 " + _nickName + " :Not enough parameters");
+	std::string channel = args[0];
+	std::string topic = args.size() >= 2 ? args[1] : "";
+	Channel *channelObj = NULL;
+	for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
+		if ((*it)->_name == channel) {
+			// channel found
+			channelObj = *it;
+			break ;
+		}
+	}
+	if (!channelObj)
+		logger.warn("403 " + _nickName + " " + channel + " :No such channel");
+	if (std::find(channelObj->_members.begin(), channelObj->_members.end(), this) == channelObj->_members.end())
+		logger.warn("442 " + _nickName + " " + channel + " :You're not on that channel");
+	// in case there is no topic param, just return existing one;
+	if (!topic.size()) {
+		// send topic
+		if (!channelObj->_topic.length())
+			send("331 " + _nickName + " " + channel + " :" + "No topic is set." + "\r\n");
+		else
+			send("332 " + _nickName + " " + channel + " :" + channelObj->_topic + "\r\n");
+		return ;
+	}
+	// if only op can change topic, check if client is op
+	if (channelObj->_opOnlyTopic)
+		if (std::find(channelObj->_operators.begin(), channelObj->_operators.end(), this) == channelObj->_operators.end())
+			logger.warn("482 " + _nickName + " " + channel + " :You're not a channel operator");
+	// set topic
+	channelObj->_topic = topic;
+	// let everyoen know topic changed
+	channelObj->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " TOPIC " + channel + " :" + topic + "\r\n");
 }
 
 void Client::quit(std::string &commandLine) {

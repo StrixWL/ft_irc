@@ -13,6 +13,8 @@ class Channel {
 		std::vector<Client *> _members;
 		std::vector<Client *> _operators;
 		std::vector<Client *> _invitees;
+		std::string _topic; //
+		bool _opOnlyTopic; //
 		bool _inviteOnly;
 		// broadcast to all members
 		void broadcast(std::string message);

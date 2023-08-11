@@ -1,6 +1,7 @@
 #include "Channel.hpp"
 
-Channel::Channel(std::string &name): _name(name), _password("321"), _inviteOnly(true) {
+// vars to reset: _password="", _inviteOnly=false
+Channel::Channel(std::string &name): _name(name), _password("321"), _inviteOnly(true), _topic(""), _opOnlyTopic(false) {
 }
 
 // broadcast to all members
