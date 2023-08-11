@@ -13,9 +13,9 @@ Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorize
 	_commands.insert(std::make_pair("PRIVMSG", &Client::privmsg)); // (complete)
 	_commands.insert(std::make_pair("PART", &Client::part)); // (complete)
 	_commands.insert(std::make_pair("KICK", &Client::kick)); // (complete)
-	_commands.insert(std::make_pair("MODE", &Client::mode));
+	_commands.insert(std::make_pair("MODE", &Client::mode)); 
 	_commands.insert(std::make_pair("INVITE", &Client::invite)); // (complete)
-	_commands.insert(std::make_pair("TOPIC", &Client::topic));
+	_commands.insert(std::make_pair("TOPIC", &Client::topic)); // (complete)
 	_commands.insert(std::make_pair("QUIT", &Client::quit)); // (complete)
 }
 

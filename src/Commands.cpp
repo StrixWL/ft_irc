@@ -36,7 +36,7 @@ void Client::pass(std::string &commandLine) {
 	logger.info("password set to : [" + _password + "]");
 	_authorized = true;
 	// comparing outputted pw with server pw
-	if (_password != PASSWORD) {
+	if (_password != irc_server.password) {
 		// nn hh
 		_authorized = false;
 		std::string e = "464 " + _nickName + " :Password incorrect";
@@ -279,6 +279,7 @@ void Client::part(std::string &commandLine) {
 					(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PART " + channels + " " + leaveMessage + "\r\n");
 					(*it)->_members.erase(std::find((*it)->_members.begin(), (*it)->_members.end(), this));
 					if (!(*it)->_members.size()) {
+						// channel empty
 						delete *it;
 						irc_server.channels.erase(it);
 					}
@@ -343,10 +344,6 @@ void Client::kick(std::string &commandLine) {
 		}
 	}
 	logger.warn("403 " + _nickName + " " + channel + " :No such channel");
-}
-
-// soon :3
-void Client::mode(std::string &commandLine) {
 }
 
 void Client::invite(std::string &commandLine) {
@@ -428,6 +425,114 @@ void Client::topic(std::string &commandLine) {
 	channelObj->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " TOPIC " + channel + " :" + topic + "\r\n");
 }
 
+// soon :3
+void Client::mode(std::string &commandLine) {
+	// TODO check if client is OP
+	std::vector<std::string> args = getArgs(commandLine);
+	if (!args.size())
+		logger.warn("461 " + _nickName + " :MODE Not enough parameters");
+	std::string channel = args[0];
+	Channel *channelObj = NULL;
+	for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
+		if ((*it)->_name == channel) {
+			// channel found
+			channelObj = *it;
+			break ;
+		}
+	}
+	if (!channelObj)
+		logger.warn("403 " + _nickName + " " + channel + " :No such channel");
+	if (args.size() == 1) {
+		std::cout << "*sending channel modes*" << std::endl;
+		return ;
+	}
+	std::string modestring = args[1];
+	// remove channel name and modestring
+	args.erase(args.begin());
+	args.erase(args.begin());
+	// now we got only mode arguments left in args
+	std::string _modestring = ""; // most be existing modes, then erase at the end
+	std::string chunk = "";
+	char sign = modestring[0] == '-' ? '-' : '+';
+	for (int i = 0; i < modestring.length(); i++) {
+		if (modestring[i] == '-' || modestring[i] == '+') {
+			if (sign != modestring[i]) {
+				_modestring = _modestring + sign + chunk;
+				sign = modestring[i];
+				chunk = "";
+			}
+		}
+		else {
+			try {
+				// check if mode is recognised
+				if (std::string("itkol").find(modestring[i]) == std::string::npos)
+					logger.warn("472 " + _nickName + " " + modestring[i] + " :is not a recognised channel mode.");
+			}
+			catch(std::exception &e) {
+				send(e.what());
+				continue  ;
+			}
+			// if mode isnt already added, add it
+			if (chunk.find(modestring[i]) == std::string::npos) {
+				chunk += modestring[i];
+			}
+		}
+	}
+	_modestring = _modestring + sign + chunk;
+	// remove unecessary signs from _modestring
+	for (int i = 0; i < _modestring.length(); i++) {
+		while ((_modestring[i] == '-' || _modestring[i] == '+') && (_modestring[i + 1] == '-' || _modestring[i + 1] == '+'))
+			_modestring.erase(i, 1);
+	}
+	if (_modestring[_modestring.length() - 1] == '-' || _modestring[_modestring.length() - 1] == '+')
+		_modestring.erase(_modestring.length() - 1, 1);
+	bool _sign;
+	for (int i = 0; i < _modestring.length(); i++) {
+		try {
+			if (_modestring[i] == '-')
+				_sign = false;
+			else if (_modestring[i] == '+')
+				_sign = true;
+			else {
+				if (_modestring[i] == 'i')
+					channelObj->_inviteOnly = _sign;
+				else if (_modestring[i] == 't')
+					channelObj->_opOnlyTopic = _sign;
+				else if (_modestring[i] == 'k') {
+					// set channel pw
+					if (args.size()) {							
+						if (args[0].find(" ") != std::string::npos) {
+							args.erase(args.begin());
+							logger.warn("696 " + _nickName + " " + channel +  " k * :Invalid key mode parameter. Syntax: <key>.");
+						}
+						// we can set pw
+						if (!_sign)
+							channelObj->_password = "";
+						else
+							channelObj->_password = args[0];
+						args.erase(args.begin());
+					}
+					else {
+						// we cant set pw
+						logger.warn("696 " + _nickName + " " + channel + " o * :You must specify a parameter for the op mode. Syntax: <nick>.");
+					}
+				}
+				else if (_modestring[i] == 'o') {
+					// set channel op
+				}
+				else if (_modestring[i] == 'l') {
+					// set channel limit
+				}
+			}
+		} catch (std::exception &e) {
+
+		}
+	}
+}
+// if (std::string("itkol").find(modestring[i]) == std::string::npos)
+			// logger.warn("432 " + _nickName + " " + args[0] + " :Erroneus nickname");
+// MODE #tabon -kkk+kkk+kkk-k+k-k+k w w w w w w w w w w w w w w
+// => -k+k-k+k-k+k w w w w w w
 void Client::quit(std::string &commandLine) {
 	if (commandLine[0] == ':')
 		commandLine.erase(0, 1);

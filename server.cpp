@@ -83,12 +83,16 @@ void server::handle_disconnection(int i)
     fd = p_fd[i].fd;
     delete this->all_clients[i - 1];
     // EDITED, SORRY, I HAD TO c:
-    for (std::vector<Channel *>::iterator it = channels.begin(); it != channels.end(); it++) {\
+    for (std::vector<Channel *>::iterator it = channels.begin(); it != channels.end(); it++) {
         Channel *channel = *it;
         // deleting deleted clients from _operators
         for (std::vector<Client *>::iterator _it = channel->_operators.begin(); _it != channel->_operators.end(); _it++)
             if (*_it == all_clients[i - 1])
                 channel->_operators.erase(_it--);
+        // deleting deleted clients from _invitees
+        for (std::vector<Client *>::iterator _it = channel->_invitees.begin(); _it != channel->_invitees.end(); _it++)
+            if (*_it == all_clients[i - 1])
+                channel->_invitees.erase(_it--);
         for (std::vector<Client *>::iterator _it = channel->_members.begin(); _it != channel->_members.end(); _it++) {
             // delete him from channel
             if (*_it == all_clients[i - 1]) {
