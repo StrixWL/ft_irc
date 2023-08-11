@@ -157,8 +157,12 @@ void Client::join(std::string &commandLine) {
 			try {
 				// check for key first, then invite
 				// check if pw match, if not, return wrong pw
-				if (passwords != (*it)->_password)
-					logger.warn("475 " + _nickName + " " + channels + " :Cannot join channel (+k) - bad key");
+				if ((*it)->_password.length())
+					if (passwords != (*it)->_password)
+						logger.warn("475 " + _nickName + " " + channels + " :Cannot join channel (+k) - bad key");
+				// check if channel is full
+				if ((*it)->_limit && (*it)->_members.size() >= (*it)->_limit)
+					logger.warn("471 " + _nickName + " " + channels + " :Cannot join channel (+l) - channel is full, try again later");
 				// check if _inviteOnly is true, check if _nickName exists in invitees list
 				if ((*it)->_inviteOnly && (std::find((*it)->_invitees.begin(), (*it)->_invitees.end(), this) == (*it)->_invitees.end()))
 					logger.warn("473 " + _nickName + " " + channels + " :Cannot join channel (+i) - you must be invited");
@@ -427,7 +431,7 @@ void Client::topic(std::string &commandLine) {
 
 // soon :3
 void Client::mode(std::string &commandLine) {
-	// TODO check if client is OP
+	// TODO inform everyoen in channel mode has changed
 	std::vector<std::string> args = getArgs(commandLine);
 	if (!args.size())
 		logger.warn("461 " + _nickName + " :MODE Not enough parameters");
@@ -451,7 +455,7 @@ void Client::mode(std::string &commandLine) {
 	args.erase(args.begin());
 	args.erase(args.begin());
 	// now we got only mode arguments left in args
-	std::string _modestring = ""; // most be existing modes, then erase at the end
+	std::string _modestring = "";
 	std::string chunk = "";
 	char sign = modestring[0] == '-' ? '-' : '+';
 	for (int i = 0; i < modestring.length(); i++) {
@@ -488,21 +492,27 @@ void Client::mode(std::string &commandLine) {
 		_modestring.erase(_modestring.length() - 1, 1);
 	bool _sign;
 	for (int i = 0; i < _modestring.length(); i++) {
+		if (i - 1 && (_modestring[i - 1] == 'k' || _modestring[i - 1] == 'o' || _modestring[i - 1] == 'l'))
+			args.erase(args.begin());
 		try {
 			if (_modestring[i] == '-')
 				_sign = false;
 			else if (_modestring[i] == '+')
 				_sign = true;
 			else {
-				if (_modestring[i] == 'i')
+				// check if client is OP (we check for access rights inside of each odmmande)
+				if (std::find(channelObj->_operators.begin(), channelObj->_operators.end(), this) == channelObj->_operators.end())
+					logger.warn("482 " + _nickName + " " + channel +  " You must have channel op access to set channel mode " + _modestring[i]);
+				if (_modestring[i] == 'i') {
 					channelObj->_inviteOnly = _sign;
-				else if (_modestring[i] == 't')
+				}
+				else if (_modestring[i] == 't') {
 					channelObj->_opOnlyTopic = _sign;
+				}
 				else if (_modestring[i] == 'k') {
 					// set channel pw
-					if (args.size()) {							
+					if (args.size()) {
 						if (args[0].find(" ") != std::string::npos) {
-							args.erase(args.begin());
 							logger.warn("696 " + _nickName + " " + channel +  " k * :Invalid key mode parameter. Syntax: <key>.");
 						}
 						// we can set pw
@@ -510,29 +520,79 @@ void Client::mode(std::string &commandLine) {
 							channelObj->_password = "";
 						else
 							channelObj->_password = args[0];
-						args.erase(args.begin());
 					}
 					else {
 						// we cant set pw
-						logger.warn("696 " + _nickName + " " + channel + " o * :You must specify a parameter for the op mode. Syntax: <nick>.");
+						logger.warn("696 " + _nickName + " " + channel + " k * You must specify a parameter for the key mode. Syntax: <key>.");
 					}
 				}
 				else if (_modestring[i] == 'o') {
 					// set channel op
+					if (args.size()) {
+						if (args[0].find(" ") != std::string::npos) {
+							logger.warn("696 " + _nickName + " " + channel +  " o * Invalid op mode parameter. Syntax: <nick>.");
+						}
+						// check if args[0] (user) exist in channel members
+						Client *newOpObj = NULL;
+						for (std::vector<Client *>::iterator it = channelObj->_members.begin(); it != channelObj->_members.end(); it++) {
+							if ((*it)->_nickName == args[0]) {
+								newOpObj = *it;
+								break ;
+							}
+						}
+						if (!newOpObj)
+							logger.warn("401 " + _nickName + " " + args[0] +  " No such nick");
+						// we can set op
+						if (!_sign) {
+							for (std::vector<Client *>::iterator it = channelObj->_operators.begin(); it != channelObj->_operators.end(); it++) {
+								if ((*it)->_nickName == args[0]) {
+									channelObj->_operators.erase(it);
+									break ;
+								}
+							}
+						}
+						else {
+							channelObj->_operators.push_back(newOpObj);
+						}
+					}
+					else {
+						// we cant set op
+						logger.warn("696 " + _nickName + " " + channel + " o * You must specify a parameter for the op mode. Syntax: <nick>.");
+					}
 				}
 				else if (_modestring[i] == 'l') {
 					// set channel limit
+					if (args.size()) {
+						if (args[0].find(" ") != std::string::npos) { 
+							logger.warn("696 " + _nickName + " " + channel +  " l * Invalid limit mode parameter. Syntax: <limit>.");
+						}
+						// should not equal to 0 and start with a number
+						int limitToSet;
+						try {
+							limitToSet = std::stoi(args[0]);
+							if (!limitToSet)
+								throw std::logic_error("salam sahbi hh");
+						} catch (std::exception &e) {
+							logger.warn("696 " + _nickName + " " + channel +  " l " + args[0] + " Invalid limit mode parameter. Syntax: <limit>.");
+						}
+						// we can set channel limit
+						if (!_sign)
+							channelObj->_limit = 0;
+						else
+							channelObj->_limit = limitToSet;
+					}
+					else {
+						// we cant set pw
+						logger.warn("696 " + _nickName + " " + channel + " l * You must specify a parameter for the limit mode. Syntax: <limit>.");
+					}
 				}
 			}
 		} catch (std::exception &e) {
-
+			send(e.what());
 		}
 	}
 }
-// if (std::string("itkol").find(modestring[i]) == std::string::npos)
-			// logger.warn("432 " + _nickName + " " + args[0] + " :Erroneus nickname");
-// MODE #tabon -kkk+kkk+kkk-k+k-k+k w w w w w w w w w w w w w w
-// => -k+k-k+k-k+k w w w w w w
+
 void Client::quit(std::string &commandLine) {
 	if (commandLine[0] == ':')
 		commandLine.erase(0, 1);
