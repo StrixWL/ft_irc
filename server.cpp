@@ -64,10 +64,10 @@ void server::accept_message(int i)
     std::string msg;
     while (1)
     {
-        bzero(buffer, 2);
+        ft_bzero(buffer, 2);
         recv(p_fd[i].fd, buffer, 1, 0);
         msg.append(buffer);
-		if (strchr(buffer, '\n'))
+		if (ft_strchr(buffer, '\n'))
 			break ;
     }
     while (msg[msg.length() - 1] == '\n' || msg[msg.length() - 1] == '\r') {
@@ -192,6 +192,35 @@ int main(int arc, char **arv)
     }
     
     irc_server.start(arv[1], arv[2]);
+}
+
+
+char* server::ft_strchr(const char *s, int c)
+{
+	char	*str;
+
+	str = (char *)s;
+	while (*str != (unsigned char)c)
+	{
+		if (*str == '\0')
+		{
+			return (NULL);
+		}
+		str++;
+	}
+	return (str);
+}
+
+void	server::ft_bzero(void *s, size_t n)
+{
+	size_t	i;
+
+	i = 0;
+	while (i < n)
+	{
+		((char *)s)[i] = 0;
+		i++;
+	}
 }
 
 server irc_server;

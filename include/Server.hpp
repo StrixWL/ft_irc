@@ -33,6 +33,9 @@ class server {
         void accept_message(int i);
         void handle_disconnection(int i);
         ~server();
+
+        char	*ft_strchr(const char *s, int c);
+        void	ft_bzero(void *s, size_t n);
 };
 
 extern server irc_server;
