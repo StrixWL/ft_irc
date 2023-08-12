@@ -431,7 +431,6 @@ void Client::topic(std::string &commandLine) {
 
 // soon :3
 void Client::mode(std::string &commandLine) {
-	// TODO inform everyoen in channel mode has changed
 	std::vector<std::string> args = getArgs(commandLine);
 	if (!args.size())
 		logger.warn("461 " + _nickName + " :MODE Not enough parameters");
@@ -447,6 +446,7 @@ void Client::mode(std::string &commandLine) {
 	if (!channelObj)
 		logger.warn("403 " + _nickName + " " + channel + " :No such channel");
 	if (args.size() == 1) {
+		// TODO: get channel modes member function for Channel class
 		std::cout << "*sending channel modes*" << std::endl;
 		return ;
 	}
@@ -490,23 +490,33 @@ void Client::mode(std::string &commandLine) {
 	}
 	if (_modestring[_modestring.length() - 1] == '-' || _modestring[_modestring.length() - 1] == '+')
 		_modestring.erase(_modestring.length() - 1, 1);
+	std::string finalModestring = "";
+	std::string finalArgs = "";
 	bool _sign;
 	for (int i = 0; i < _modestring.length(); i++) {
 		if (i - 1 && (_modestring[i - 1] == 'k' || _modestring[i - 1] == 'o' || _modestring[i - 1] == 'l'))
 			args.erase(args.begin());
 		try {
-			if (_modestring[i] == '-')
+			if (_modestring[i] == '-') {
+				finalModestring += '-';
 				_sign = false;
-			else if (_modestring[i] == '+')
+			}
+			else if (_modestring[i] == '+') {
+				finalModestring += '+';
 				_sign = true;
+			}
 			else {
 				// check if client is OP (we check for access rights inside of each odmmande)
 				if (std::find(channelObj->_operators.begin(), channelObj->_operators.end(), this) == channelObj->_operators.end())
 					logger.warn("482 " + _nickName + " " + channel +  " You must have channel op access to set channel mode " + _modestring[i]);
 				if (_modestring[i] == 'i') {
+					if (channelObj->_inviteOnly != _sign)
+						finalModestring += 'i';
 					channelObj->_inviteOnly = _sign;
 				}
 				else if (_modestring[i] == 't') {
+					if (channelObj->_opOnlyTopic != _sign)
+						finalModestring += 't';
 					channelObj->_opOnlyTopic = _sign;
 				}
 				else if (_modestring[i] == 'k') {
@@ -516,10 +526,15 @@ void Client::mode(std::string &commandLine) {
 							logger.warn("696 " + _nickName + " " + channel +  " k * :Invalid key mode parameter. Syntax: <key>.");
 						}
 						// we can set pw
+						std::string oldPw = channelObj->_password;
 						if (!_sign)
 							channelObj->_password = "";
 						else
 							channelObj->_password = args[0];
+						if (oldPw != channelObj->_password) {
+							finalArgs += " " + args[0];
+							finalModestring += 'k';
+						}
 					}
 					else {
 						// we cant set pw
@@ -547,11 +562,20 @@ void Client::mode(std::string &commandLine) {
 							for (std::vector<Client *>::iterator it = channelObj->_operators.begin(); it != channelObj->_operators.end(); it++) {
 								if ((*it)->_nickName == args[0]) {
 									channelObj->_operators.erase(it);
+									finalArgs += " " + args[0];
+									finalModestring += 'o';
 									break ;
 								}
 							}
 						}
 						else {
+							for (std::vector<Client *>::iterator it = channelObj->_operators.begin(); it != channelObj->_operators.end(); it++) {
+								// break if there is already an op with the same nickname
+								if ((*it)->_nickName == args[0])
+									break ;
+							}
+							finalArgs += " " + args[0];
+							finalModestring += 'o';
 							channelObj->_operators.push_back(newOpObj);
 						}
 					}
@@ -576,10 +600,15 @@ void Client::mode(std::string &commandLine) {
 							logger.warn("696 " + _nickName + " " + channel +  " l " + args[0] + " Invalid limit mode parameter. Syntax: <limit>.");
 						}
 						// we can set channel limit
+						int oldLimit = channelObj->_limit;
 						if (!_sign)
 							channelObj->_limit = 0;
 						else
 							channelObj->_limit = limitToSet;
+						if (channelObj->_limit != oldLimit) {
+							finalArgs += " " + std::to_string(channelObj->_limit);
+							finalModestring += 'l';
+						}
 					}
 					else {
 						// we cant set pw
@@ -591,6 +620,15 @@ void Client::mode(std::string &commandLine) {
 			send(e.what());
 		}
 	}
+	// remove unecessary signs from finalModestring
+	for (int i = 0; i < finalModestring.length(); i++) {
+		while ((finalModestring[i] == '-' || finalModestring[i] == '+') && (finalModestring[i + 1] == '-' || finalModestring[i + 1] == '+'))
+			finalModestring.erase(i, 1);
+	}
+	if (finalModestring[finalModestring.length() - 1] == '-' || finalModestring[finalModestring.length() - 1] == '+')
+		finalModestring.erase(finalModestring.length() - 1, 1);
+	if (finalModestring.length())
+		channelObj->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " MODE " + channel + " " + finalModestring + finalArgs + "\r\n");
 }
 
 void Client::quit(std::string &commandLine) {
