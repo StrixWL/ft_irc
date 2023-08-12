@@ -16,6 +16,7 @@ Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorize
 	_commands.insert(std::make_pair("MODE", &Client::mode)); 
 	_commands.insert(std::make_pair("INVITE", &Client::invite)); // (complete)
 	_commands.insert(std::make_pair("TOPIC", &Client::topic)); // (complete)
+	_commands.insert(std::make_pair("NAMES", &Client::names)); // (complete)
 	_commands.insert(std::make_pair("QUIT", &Client::quit)); // (complete)
 }
 

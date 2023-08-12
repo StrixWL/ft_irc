@@ -181,7 +181,6 @@ void Client::join(std::string &commandLine) {
 			if ((*it)->_topic.length())
 				send("332 " + _nickName + " " + (*it)->_name + " :" + (*it)->_topic + "\r\n");
 			// send list of all existing members in that channel
-			std::cout << "names: " << (*it)->getNames() << std::endl;
 			send("353 " + _nickName + " = " + (*it)->_name + " :" + (*it)->getNames() + "\r\n");
 			send("366 " + _nickName + " " + (*it)->_name + " :End of /NAMES list.\r\n");
 			return ;
@@ -634,6 +633,20 @@ void Client::mode(std::string &commandLine) {
 		finalModestring.erase(finalModestring.length() - 1, 1);
 	if (finalModestring.length())
 		channelObj->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " MODE " + channel + " " + finalModestring + finalArgs + "\r\n");
+}
+
+void Client::names(std::string &commandLine) {
+	std::vector<std::string> args = getArgs(commandLine);
+	if (args.size()) {
+		for (std::vector<Channel *>::iterator it = irc_server.channels.begin(); it != irc_server.channels.end(); it++) {
+			if ((*it)->_name == args[0]) {
+				if (std::find((*it)->_members.begin(), (*it)->_members.end(), this) != (*it)->_members.end())
+					send("353 " + _nickName + " = " + (*it)->_name + " :" + (*it)->getNames() + "\r\n");
+				break ;
+			}
+		}
+	}
+	send("366 " + _nickName + " " + (args.size() ? args[0] : "*") + " :End of /NAMES list.\r\n");
 }
 
 void Client::quit(std::string &commandLine) {

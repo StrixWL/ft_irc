@@ -141,7 +141,7 @@ void server::makeserver(char *port, char *password)
         exit(1);
     }
     // making the server's socket
-    server_fd =  (AF_INET, SOCK_STREAM, 0);
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0)
     {
         logger.error("Failed to create socket!");
