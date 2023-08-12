@@ -24,6 +24,7 @@ class Channel {
 		// broadcast to operators except the broadcaster
 		void broadcastOP(std::string message, Client *broadcaster);
 		std::string getNames(void);
+		std::string getModes(void);
 };
 
 #endif

@@ -31,3 +31,21 @@ std::string Channel::getNames(void) {
 		names += std::string(names.length() ? " " : "") + ((std::find(_operators.begin(), _operators.end(), *it) !=  _operators.end()) ? "@" : "") + (*it)->_nickName; // XD?
 	return names;
 }
+
+std::string Channel::getModes(void) {
+	std::string modes = "+";
+	std::string args = "";
+	if (_inviteOnly)
+		modes += 'i';
+	if (_password != "") {
+		modes += 'k';
+		args += " " + _password;
+	}
+	if (_limit) {
+		modes += 'l';
+		args += " " + std::to_string(_limit);
+	}
+	if (_opOnlyTopic)
+		modes += 't';
+	return (modes + args);
+}

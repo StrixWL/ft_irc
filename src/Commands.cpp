@@ -181,9 +181,9 @@ void Client::join(std::string &commandLine) {
 			if ((*it)->_topic.length())
 				send("332 " + _nickName + " " + (*it)->_name + " :" + (*it)->_topic + "\r\n");
 			// send list of all existing members in that channel
+			std::cout << "names: " << (*it)->getNames() << std::endl;
 			send("353 " + _nickName + " = " + (*it)->_name + " :" + (*it)->getNames() + "\r\n");
 			send("366 " + _nickName + " " + (*it)->_name + " :End of /NAMES list.\r\n");
-			
 			return ;
 		}
 	}
@@ -282,6 +282,9 @@ void Client::part(std::string &commandLine) {
 					// IS PART OF THE CHANNEL
 					(*it)->broadcast(":" + _nickName + "!~" + _userName + "@" + _IPAddress + " PART " + channels + " " + leaveMessage + "\r\n");
 					(*it)->_members.erase(std::find((*it)->_members.begin(), (*it)->_members.end(), this));
+					// remove from _operators if exist
+					if (std::find((*it)->_operators.begin(), (*it)->_operators.end(), this) != (*it)->_operators.end())
+						(*it)->_operators.erase(std::find((*it)->_operators.begin(), (*it)->_operators.end(), this));
 					if (!(*it)->_members.size()) {
 						// channel empty
 						delete *it;
@@ -446,8 +449,10 @@ void Client::mode(std::string &commandLine) {
 	if (!channelObj)
 		logger.warn("403 " + _nickName + " " + channel + " :No such channel");
 	if (args.size() == 1) {
-		// TODO: get channel modes member function for Channel class
-		std::cout << "*sending channel modes*" << std::endl;
+		// sending channel modes
+		std::string modes = channelObj->getModes();
+		if (modes.length() != 1)
+			send("324 " + _nickName + " " + channel + " :" + channelObj->getModes() + "\r\n");
 		return ;
 	}
 	std::string modestring = args[1];
