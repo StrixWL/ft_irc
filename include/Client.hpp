@@ -37,7 +37,7 @@ class Client {
 				::logger.verbose("\033[1;37m[" + std::to_string(_id) + "]\033[0m " +  message);
 			}
 	};
-	public: // private
+	public:
 		int _clientFd;
 		std::map<std::string, void (Client::*)(std::string &)> _commands;
 		std::string _nickName;
@@ -53,7 +53,6 @@ class Client {
 		// welcomed means this used was registered before and welcomed, used so that we dont send welcome messages everytime user changes nick
 		bool _welcomed;
 		Client::Logger logger;
-	public:
 		bool _keepAlive;
 		Client(int &clientFd);
 		int getFd(void);

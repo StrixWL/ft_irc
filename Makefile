@@ -25,7 +25,7 @@ all: $(NAME)
 
 
 $(NAME): $(OBJ_FILES)
-	$(CC) $(OBJ_FILES) -o $(NAME) -std=c++98 -Iinclude
+	$(CC) $(OBJ_FILES) -o $(NAME) -std=c++98 -Iinclude -fsanitize=address
 
 %.o: %.cpp $(HEADERS)
 	$(CC) $(FLAGS) -Iinclude -Ibonus/bot -c $< -o $@ -std=c++98

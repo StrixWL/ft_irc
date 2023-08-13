@@ -31,5 +31,7 @@
 *.out
 *.app
 
+IRC_Emet
+
 .vscode
 .DS_STORE

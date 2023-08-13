@@ -573,14 +573,19 @@ void Client::mode(std::string &commandLine) {
 							}
 						}
 						else {
+							bool alreadyExist = false;
 							for (std::vector<Client *>::iterator it = channelObj->_operators.begin(); it != channelObj->_operators.end(); it++) {
 								// break if there is already an op with the same nickname
-								if ((*it)->_nickName == args[0])
+								if ((*it)->_nickName == args[0]) {
+									alreadyExist = true;
 									break ;
+								}
 							}
-							finalArgs += " " + args[0];
-							finalModestring += 'o';
-							channelObj->_operators.push_back(newOpObj);
+							if (!alreadyExist) {
+								finalArgs += " " + args[0];
+								finalModestring += 'o';
+								channelObj->_operators.push_back(newOpObj);
+							}
 						}
 					}
 					else {

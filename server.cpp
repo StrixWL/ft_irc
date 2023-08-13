@@ -71,14 +71,15 @@ void server::handle_new_conection()
 void server::accept_message(int i)
 {
     char buffer[2];
+    int k;
     std::string msg;
     // reading till reaching the '\n' character
     while (1)
     {
         ft_bzero(buffer, 2);
-        recv(p_fd[i].fd, buffer, 1, 0);
+        k = recv(p_fd[i].fd, buffer, 1, 0);
         msg.append(buffer);
-		if (ft_strchr(buffer, '\n'))
+		if (ft_strchr(buffer, '\n') || !k)
 			break ;
     }
     // deleting the '\n' or '\r' characters from the end of line
@@ -94,7 +95,6 @@ void server::handle_disconnection(int i)
     int fd;
 
     fd = p_fd[i].fd;
-    delete this->all_clients[i - 1];
     // EDITED, SORRY, I HAD TO c:
     for (std::vector<Channel *>::iterator it = channels.begin(); it != channels.end(); it++) {
         Channel *channel = *it;
@@ -125,6 +125,7 @@ void server::handle_disconnection(int i)
         }
     }
     // THIS IS SO SHIT, I SWEAR TO GOD I CAN WRITE BETTER CODE, AM JUST TIRED AND SLEEPY
+    delete this->all_clients[i - 1];
     this->all_clients.erase(this->all_clients.begin() + i - 1);
     this->p_fd.erase(this->p_fd.begin() + i);
     close(fd);
