@@ -68,6 +68,7 @@ void server::handle_new_conection()
     logger.info("a new client has connected");
 }
 
+
 void server::accept_message(int i)
 {
     char buffer[2];
@@ -81,6 +82,13 @@ void server::accept_message(int i)
         msg.append(buffer);
 		if (ft_strchr(buffer, '\n') || !k)
 			break ;
+    }
+    // disconnecting the client the msg was more than 512bytes
+    if (msg.size() > 512)
+    {
+            logger.error("the message cannot be more than 512Bytes");
+            handle_disconnection(i);
+            return ;
     }
     // deleting the '\n' or '\r' characters from the end of line
     while (msg[msg.length() - 1] == '\n' || msg[msg.length() - 1] == '\r') {
@@ -135,7 +143,7 @@ void server::handle_disconnection(int i)
 void server::makeserver(char *port, char *password)
 {
     // getting the server's port
-    this->port = atoi(port);
+    this->port = ft_atoi(port);
     if (this->port <= 0)
     {
         logger.error("PORT ERROR!");
@@ -203,36 +211,6 @@ int main(int arc, char **arv)
     }
     
     irc_server.start(arv[1], arv[2]);
-}
-
-
-// utils functions
-char* server::ft_strchr(const char *s, int c)
-{
-	char	*str;
-
-	str = (char *)s;
-	while (*str != (unsigned char)c)
-	{
-		if (*str == '\0')
-		{
-			return (NULL);
-		}
-		str++;
-	}
-	return (str);
-}
-
-void	server::ft_bzero(void *s, size_t n)
-{
-	size_t	i;
-
-	i = 0;
-	while (i < n)
-	{
-		((char *)s)[i] = 0;
-		i++;
-	}
 }
 
 server irc_server;

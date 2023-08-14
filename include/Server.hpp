@@ -36,6 +36,7 @@ class server {
 
         char	*ft_strchr(const char *s, int c);
         void	ft_bzero(void *s, size_t n);
+        int     ft_atoi(const char *str);
 };
 
 extern server irc_server;

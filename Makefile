@@ -1,5 +1,5 @@
 NAME=			ircserv
-FLAGS=			#-Wall -Werror -Wextra
+FLAGS=			-Wall -Werror -Wextra
 CC=				c++
 HEADERS=		include/Client.hpp \
 				include/Logger.hpp \
@@ -11,7 +11,8 @@ SRC_FILES=		server.cpp \
 				src/Client.cpp \
 				src/Logger.cpp \
 				src/Commands.cpp \
-				src/Channel.cpp
+				src/Channel.cpp \
+				utils.cpp
 
 SRC_FILES_BONUS= src/Logger.cpp \
 				 bonus/bot/bot.cpp
