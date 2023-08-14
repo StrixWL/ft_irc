@@ -18,7 +18,7 @@ void server::start(char *port, char *password)
             exit(1);
         }
         // checking on every struct's revent so either accepting a new message or a new connection or a disconnection 
-       for (int i = 0; i < this->p_fd.size(); i++)
+       for (unsigned long i = 0; i < this->p_fd.size(); i++)
         {
             if (this->p_fd[i].revents == 0)
                 continue ;
@@ -30,7 +30,7 @@ void server::start(char *port, char *password)
                 handle_disconnection(i);
         }
         // disconnect the client if the _keepAlive boolean is false 
-        for (int i = 0; i < this->all_clients.size(); i++)
+        for (unsigned long i = 0; i < this->all_clients.size(); i++)
         {
             if (!this->all_clients[i]->_keepAlive)
                 handle_disconnection(i + 1);
@@ -58,7 +58,6 @@ void server::handle_new_conection()
     // adding it to POLL's array of sruct so it get monitored as well 
     pollfd pd = {fd, POLLIN, 0};
     this->p_fd.push_back(pd);
-    char *client_ip;
 
     // making the new client class
     Client *my_client = new Client(fd);
@@ -72,30 +71,37 @@ void server::handle_new_conection()
 void server::accept_message(int i)
 {
     char buffer[2];
+    int cmd = 0;
     int k;
-    std::string msg;
     // reading till reaching the '\n' character
     while (1)
     {
         ft_bzero(buffer, 2);
         k = recv(p_fd[i].fd, buffer, 1, 0);
-        msg.append(buffer);
-		if (ft_strchr(buffer, '\n') || !k)
+        all_clients[i - 1]->_msgBuffer.append(buffer);
+		if (ft_strchr(buffer, '\n') || !k || k == -1)
 			break ;
     }
+    if (ft_strchr(buffer, '\n'))
+        cmd = 1;
     // disconnecting the client the msg was more than 512bytes
-    if (msg.size() > 512)
+    if (all_clients[i - 1]->_msgBuffer.size() > 512)
     {
             logger.error("the message cannot be more than 512Bytes");
             handle_disconnection(i);
             return ;
     }
     // deleting the '\n' or '\r' characters from the end of line
-    while (msg[msg.length() - 1] == '\n' || msg[msg.length() - 1] == '\r') {
-        msg = msg.substr(0, msg.length() - 1);
+    while (all_clients[i - 1]->_msgBuffer[all_clients[i - 1]->_msgBuffer.length() - 1] == '\n' ||
+            all_clients[i - 1]->_msgBuffer[all_clients[i - 1]->_msgBuffer.length() - 1] == '\r') {
+        all_clients[i - 1]->_msgBuffer = all_clients[i - 1]->_msgBuffer.substr(0, all_clients[i - 1]->_msgBuffer.length() - 1);
     }
     // executing the command
-    this->all_clients[i - 1]->execute(msg);
+    if (cmd == 1)
+    {
+        this->all_clients[i - 1]->execute(all_clients[i - 1]->_msgBuffer);
+        all_clients[i - 1]->_msgBuffer.clear();
+    }
 }
 
 void server::handle_disconnection(int i)
@@ -190,7 +196,7 @@ void server::makeserver(char *port, char *password)
 server::~server(){
  
     // deleting the client's classes
-    for (int i = 0; i < this->all_clients.size(); i++)
+    for (unsigned long i = 0; i < this->all_clients.size(); i++)
     {
         delete all_clients[i];
         close(this->p_fd[i + 1].fd);

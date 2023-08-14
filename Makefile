@@ -1,5 +1,5 @@
 NAME=			ircserv
-FLAGS=			-Wall -Werror -Wextra
+FLAGS=			#-Wall -Werror -Wextra
 CC=				c++
 HEADERS=		include/Client.hpp \
 				include/Logger.hpp \
