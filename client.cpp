@@ -120,6 +120,7 @@ int main() {
         // Send the message to the server
 		std::string msg = buffer;
 		msg += "\r\n";
+        std::cout << "XD" << std::endl;
         send(clientSocket, msg.c_str(), msg.length(), 0);
     }
 

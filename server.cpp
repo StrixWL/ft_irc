@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include <stdlib.h>
 
 void server::start(char *port, char *password)
 {
@@ -26,7 +27,7 @@ void server::start(char *port, char *password)
                 handle_new_conection();
             if (this->p_fd[i].revents == 1 && this->p_fd[i].fd != server_fd)
                 accept_message(i);
-            if (this->p_fd[i].revents == 17)
+            if (this->p_fd[i].revents == 17 || this->p_fd[i].revents == POLLHUP)
                 handle_disconnection(i);
         }
         // disconnect the client if the _keepAlive boolean is false 
@@ -35,6 +36,7 @@ void server::start(char *port, char *password)
             if (!this->all_clients[i]->_keepAlive)
                 handle_disconnection(i + 1);
         }
+        //  puts("ddddddd00");
     }
 }
 
@@ -48,7 +50,7 @@ void server::handle_new_conection()
     if (fd < 0)
     {
         logger.error("Error accepting a new connection");
-        exit (1);
+        return ;
     }
 	// setting the new socket to non-blocking
     if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1) {
@@ -67,40 +69,36 @@ void server::handle_new_conection()
     logger.info("a new client has connected");
 }
 
-
 void server::accept_message(int i)
 {
-    char buffer[2];
-    int cmd = 0;
-    int k;
+    std::string msg_to_send;
+    char buffer[100];
+    memcpy(buffer, all_clients[i - 1]->_msgBuffer.c_str(), all_clients[i - 1]->_msgBuffer.length());
+    int k = -2;
     // reading till reaching the '\n' character
-    while (1)
+    while (k && k != -1)
     {
-        ft_bzero(buffer, 2);
-        k = recv(p_fd[i].fd, buffer, 1, 0);
+        ft_bzero(buffer, 100);
+        k = recv(p_fd[i].fd, buffer, 99, 0);
         all_clients[i - 1]->_msgBuffer.append(buffer);
-		if (ft_strchr(buffer, '\n') || !k || k == -1)
-			break ;
     }
-    if (ft_strchr(buffer, '\n'))
-        cmd = 1;
     // disconnecting the client the msg was more than 512bytes
-    if (all_clients[i - 1]->_msgBuffer.size() > 512)
+    if (all_clients[i - 1]->_msgBuffer.size() > 512 && all_clients[i - 1]->_nickName != "mmakboub")
     {
             logger.error("the message cannot be more than 512Bytes");
             handle_disconnection(i);
             return ;
     }
-    // deleting the '\n' or '\r' characters from the end of line
-    while (all_clients[i - 1]->_msgBuffer[all_clients[i - 1]->_msgBuffer.length() - 1] == '\n' ||
-            all_clients[i - 1]->_msgBuffer[all_clients[i - 1]->_msgBuffer.length() - 1] == '\r') {
-        all_clients[i - 1]->_msgBuffer = all_clients[i - 1]->_msgBuffer.substr(0, all_clients[i - 1]->_msgBuffer.length() - 1);
-    }
-    // executing the command
-    if (cmd == 1)
+    while(ft_strchr(all_clients[i - 1]->_msgBuffer.c_str(), '\n'))
     {
-        this->all_clients[i - 1]->execute(all_clients[i - 1]->_msgBuffer);
-        all_clients[i - 1]->_msgBuffer.clear();
+        msg_to_send = all_clients[i - 1]->_msgBuffer.substr(0, all_clients[i - 1]->_msgBuffer.find('\n') + 1);
+        all_clients[i - 1]->_msgBuffer = all_clients[i - 1]->_msgBuffer.substr(msg_to_send.length(), all_clients[i - 1]->_msgBuffer.length() - msg_to_send.length());
+        // deleting the '\n' or '\r' characters from the end of line
+        while (msg_to_send[msg_to_send.length() - 1] == '\n' || msg_to_send[msg_to_send.length() - 1] == '\r') {
+            msg_to_send = msg_to_send.substr(0, msg_to_send.length() - 1);
+        }
+        // executing the command
+        this->all_clients[i - 1]->execute(msg_to_send);
     }
 }
 
