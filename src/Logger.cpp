@@ -17,16 +17,16 @@ Logger::Logger() {
 
 std::string getTime() {
 	// le time
-	std::time_t now = std::time(NULL);
-    std::tm *timeinfo = std::localtime(&now);
-	std::string hour = std::to_string(timeinfo->tm_hour);
-	hour = hour.length() == 2 ? hour : "0" + hour;
-	std::string minute = std::to_string(timeinfo->tm_min);
-	minute = minute.length() == 2 ? minute : "0" + minute;
-	std::string second = std::to_string(timeinfo->tm_sec);
-	second = second.length() == 2 ? second : "0" + second;
-	return ((hour.length() == 2 ? hour : "0" + hour) + ":" + minute + ":" + second);
-	// return "-";
+	// std::time_t now = std::time(NULL);
+    // std::tm *timeinfo = std::localtime(&now);
+	// std::string hour = std::to_string(timeinfo->tm_hour);
+	// hour = hour.length() == 2 ? hour : "0" + hour;
+	// std::string minute = std::to_string(timeinfo->tm_min);
+	// minute = minute.length() == 2 ? minute : "0" + minute;
+	// std::string second = std::to_string(timeinfo->tm_sec);
+	// second = second.length() == 2 ? second : "0" + second;
+	// return ((hour.length() == 2 ? hour : "0" + hour) + ":" + minute + ":" + second);
+	return "-";
 }
 
 void Logger::debug(std::string message) {

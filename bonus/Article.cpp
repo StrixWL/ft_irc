@@ -14,15 +14,6 @@
 
 Article::Article(const std::string& title, const std::string& content): title(title), content(content), votes(0) {}
 
-void Article::upvote() 
-{
-    this->votes++;
-}
-void Article::downvote() 
-{
-    this->votes-- ;
-}
-
 std::string Article::getTitle() const {
     return title;
 }
@@ -30,7 +21,7 @@ Article::Article(const Article &src)
 {
     this->title = src.title;
     this->content = src.content;
-    std::cout << "title = " << this->title << " content = " << this->content << std::endl;
+    this->votes = src.votes;
 }
 
 std::string Article::getContent() const {

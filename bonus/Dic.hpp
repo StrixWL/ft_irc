@@ -18,10 +18,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <iostream>
 #include <vector>
 #include "Page.hpp"
-#include <thread>
 #include <cstdlib>
 #include <cstring>
 #include <stdio.h>

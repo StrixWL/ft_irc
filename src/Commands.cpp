@@ -462,7 +462,7 @@ void Client::mode(std::string &commandLine) {
 	std::string _modestring = "";
 	std::string chunk = "";
 	char sign = modestring[0] == '-' ? '-' : '+';
-	for (int i = 0; i < modestring.length(); i++) {
+	for (size_t i = 0; i < modestring.length(); i++) {
 		if (modestring[i] == '-' || modestring[i] == '+') {
 			if (sign != modestring[i]) {
 				_modestring = _modestring + sign + chunk;
@@ -488,7 +488,7 @@ void Client::mode(std::string &commandLine) {
 	}
 	_modestring = _modestring + sign + chunk;
 	// remove unecessary signs from _modestring
-	for (int i = 0; i < _modestring.length(); i++) {
+	for (size_t i = 0; i < _modestring.length(); i++) {
 		while ((_modestring[i] == '-' || _modestring[i] == '+') && (_modestring[i + 1] == '-' || _modestring[i + 1] == '+'))
 			_modestring.erase(i, 1);
 	}
@@ -497,7 +497,7 @@ void Client::mode(std::string &commandLine) {
 	std::string finalModestring = "";
 	std::string finalArgs = "";
 	bool _sign;
-	for (int i = 0; i < _modestring.length(); i++) {
+	for (size_t i = 0; i < _modestring.length(); i++) {
 		if (i - 1 && (_modestring[i - 1] == 'k' || _modestring[i - 1] == 'o' || _modestring[i - 1] == 'l'))
 			args.erase(args.begin());
 		try {
@@ -609,7 +609,7 @@ void Client::mode(std::string &commandLine) {
 							logger.warn("696 " + _nickName + " " + channel +  " l " + args[0] + " Invalid limit mode parameter. Syntax: <limit>.");
 						}
 						// we can set channel limit
-						int oldLimit = channelObj->_limit;
+						size_t oldLimit = channelObj->_limit;
 						if (!_sign)
 							channelObj->_limit = 0;
 						else
@@ -630,7 +630,7 @@ void Client::mode(std::string &commandLine) {
 		}
 	}
 	// remove unecessary signs from finalModestring
-	for (int i = 0; i < finalModestring.length(); i++) {
+	for (size_t i = 0; i < finalModestring.length(); i++) {
 		while ((finalModestring[i] == '-' || finalModestring[i] == '+') && (finalModestring[i + 1] == '-' || finalModestring[i + 1] == '+'))
 			finalModestring.erase(i, 1);
 	}

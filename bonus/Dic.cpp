@@ -58,27 +58,19 @@ void Dic::bot_Cmdpart()
 }
 void Dic::initialize_articles()
 {   
-    this->addArticleToPage(Article("22", "22\r\n"));
-   this->addArticleToPage(Article("title12", "conntent 21\r\n"));
-   this->addArticleToPage(Article("3", "hostname servername:realnameBohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bo3\r\n"));
-   this->addArticleToPage(Article("4", "4ostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bofd\r\n"));
-   this->addArticleToPage(Article("5", "ostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bo5\r\n"));
-   this->addArticleToPage(Article("33", "ostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bo6\r\n"));
-   this->addArticleToPage(Article("7", "ostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bo7\r\n"));
-   this->addArticleToPage(Article("8", "ostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bo8\r\n"));
-   this->addArticleToPage(Article("9", "9ostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bo\r\n"));
-   this->addArticleToPage(Article("11", "1ostnamee servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bo1\r\n"));
-   this->addArticleToPage(Article("10", "1ostname s ervername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bohostname servername :realname Bov\r\n"));
-   this->addArticleToPage(Article("12", "12\r\n"));
-   this->addArticleToPage(Article("13", "13\r\n"));
+    this->addArticleToPage(Article("What is Array Decay", "The loss of type and dimensions of an array is known as decay of an array.This generally occurs when we pass the array into function by value or pointer. What it does is, it sends first address to the array which is a pointer, hence the size of array is not the original one, but the one occupied by the pointer in the memory.\r\n"));
+   this->addArticleToPage(Article("Can Static Functions Be Virtual in C++?", "In C++, a static member function of a class cannot be virtual. Virtual functions are invoked when you have a pointer or reference to an instance of a class. Static functions aren’t tied to the instance of a class but they are tied to the class. C++ doesn’t have pointers-to-class, so there is no scenario in which you could invoke a static function virtually.\r\n"));
+   this->addArticleToPage(Article("What is malloc ?", "The malloc or memory allocation method in C is used to dynamically allocate a single large block of memory with the specified size. It returns a pointer of type void which can be cast into a pointer of any form. It doesn’t Initialize memory at execution time so that it has initialized each block with the default garbage value initially.\r\n"));
+   this->addArticleToPage(Article("What is a Responsive Website", "A responsive website, simply improves the viewing experience; it fits into any device irrespective of resolution. It means a responsive website virtually fits into any device that uses a web browser. Other than being compatible with a unique variety of resolutions, a responsive website works flawlessly across a range of devices, including smartphones, tablets and smartphones.\r\n"));
+
 }
 void Dic::helpCommand() {
     std::string helpMessage;
     helpMessage += "/help -- List available commands \r\n";
-    helpMessage += "PRIVMSG #myChannel :/topics -- List first topics page \r\n";
+    helpMessage += "PRIVMSG #myChannel :/topics [Page index] -- List a page \r\n";
     helpMessage += "PRIVMSG #myChannel :/show [title] -- Show a specific topic \r\n";
-    helpMessage += "PRIVMSG #myChannel :/upvote [topic index] -- Upvote a topic \r\n";
-    helpMessage += "PRIVMSG #myChannel :/downvote [topic index] -- Downvote a topic \r\n";
+    helpMessage += "PRIVMSG #myChannel :/upvote [title] -- Upvote a topic \r\n";
+    helpMessage += "PRIVMSG #myChannel :/downvote [title] -- Downvote a topic \r\n";
     helpMessage += "PRIVMSG #myChannel :/add <[Topic title]> [Topic content] \r\n";
     std::string invitmsg = "PRIVMSG #myChannel :"  + helpMessage + "\r\n";
     send(this->sock, invitmsg.c_str(), invitmsg.length(), 0);
@@ -103,10 +95,8 @@ std::vector<std::string> Dic::getArgs(std::string commandLine) {
 }
 
 void Dic::showCommande(std::string command) {
-
     while (command[0] == ' ')
         command.erase(0, 1);
-    std::cout << "|" << command.substr(0, command.find(" ")) << "|" << std::endl;
     if (command.substr(0, command.find(" ")) != "!show") {
          std::string msg = "PRIVMSG #myChannel : invalide argument\r\n";
         send(this->sock, msg.c_str(),msg.length(), 0);
@@ -121,7 +111,6 @@ void Dic::showCommande(std::string command) {
         std::map<std::string, std::string>::const_iterator article = pages[i].getArticle().find(title);
         if (article != pages[i].getArticle().end())
         {
-            std::cout << article->second << std::endl;
             std::string titleMessage = "PRIVMSG #myChannel :" + title + "\r\n";
             send(this->sock, titleMessage.c_str(), titleMessage.length(), 0);
 
@@ -185,8 +174,6 @@ void Dic::addCommande(std::string buff) {
     while (buff[0] == ' ')
         buff.erase(0, 1);
     std::string content = buff;
-    std::cout << "title: " << title << std::endl;
-    std::cout << "content: " << content << std::endl;
     addArticleToPageWithTitle(title, content);
     std::string msg = "PRIVMSG #myChannel : article has been added succecfuly \r\n";
 }
@@ -223,7 +210,7 @@ int	Dic::ft_atoi(const char *str)
 void Dic::topics(std::string cmd)
 {
     std::string invitmsg;
-    int i;
+    size_t i;
     std::vector<std::string> args = getArgs(cmd);
     std::string formattedMessage;
     if (args.size() != 2 || args[0] != "!topics") {
@@ -239,13 +226,12 @@ void Dic::topics(std::string cmd)
         return ;
     }
      invitmsg = "PRIVMSG #myChannel :" + pages[i].display() + "\r\n";
-    std::cout << invitmsg << std::endl;
     send(this->sock, invitmsg.c_str(), invitmsg.length(), 0);
         // assert(false);
 }
 void Dic::displayPages() {
     
-        for (int i = 0; i < pages.size(); i++)
+        for (size_t i = 0; i < pages.size(); i++)
         {
             pages[i].display();
         }
@@ -254,7 +240,6 @@ void Dic::downVoteCommande(std::string buff)
 {
     while (buff[0] == ' ')
         buff.erase(0, 1);
-    std::cout << "|" << buff.substr(0, buff.find(" ")) << "|" << std::endl;
     if (buff.substr(0, buff.find(" ")) != "!downvote") {
          std::string msg = "PRIVMSG #myChannel : invalide argument\r\n";
         send(this->sock, msg.c_str(),msg.length(), 0);
@@ -265,21 +250,14 @@ void Dic::downVoteCommande(std::string buff)
         buff.erase(0, 1);
     std::string title = buff;
     for (std::vector<Page>::iterator it = pages.begin(); it != pages.end(); it++) {
-        for (std::map<std::string, std::string>::iterator _it = it->articles.begin(); _it != it->articles.end(); _it++) {
-            std::cout << _it->first << ": " << _it->second << std::endl;
-        }
-        std::cout << it->articles[title].length() << std::endl;
         if (it->articles[title].length()) {
             it->votes[title]--;
-            std::cout << it->votes[title] << std::endl;
         }
     }
-    // pages.downvoteAritcle(title);
 }
 void Dic::upVoteCommande(std::string buff){
    while (buff[0] == ' ')
         buff.erase(0, 1);
-    std::cout << "|" << buff.substr(0, buff.find(" ")) << "|" << std::endl;
     if (buff.substr(0, buff.find(" ")) != "!upvote") {
          std::string msg = "PRIVMSG #myChannel : invalide argument\r\n";
         send(this->sock, msg.c_str(),msg.length(), 0);
@@ -292,7 +270,6 @@ void Dic::upVoteCommande(std::string buff){
     for (std::vector<Page>::iterator it = pages.begin(); it != pages.end(); it++) {
         if (it->articles[title].length()) {
             it->votes[title]++;
-            std::cout << it->votes[title] << std::endl;
         }
     
 }
@@ -361,7 +338,6 @@ void Dic::start(void) {
         {
             memset(buff, 0, sizeof(buff));
             recv(sock, buff, sizeof(buff), 0);
-            // std::cout << buff << std::endl;
             pos = std::string(buff).find(":", std::string(buff).find("PRIVMSG #"));
             if (pos != std::string::npos)
             {
@@ -369,10 +345,7 @@ void Dic::start(void) {
                 handle_commande(command);  
    
             }
-            
-
     }
-    
     close(this->sock);
 }
 
@@ -381,7 +354,3 @@ int main() {
     bot.start();
     return 0;
 }
-// :Stex!~StexU@127.0.0.1 PRIVMSG #myChannel :!kdlskdls done
-// :Stex PRIVMSG mmakboub :dkskd
-
-// send invalid args to the client done

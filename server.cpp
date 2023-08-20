@@ -36,7 +36,6 @@ void server::start(char *port, char *password)
             if (!this->all_clients[i]->_keepAlive)
                 handle_disconnection(i + 1);
         }
-        //  puts("ddddddd00");
     }
 }
 
@@ -72,13 +71,13 @@ void server::handle_new_conection()
 void server::accept_message(int i)
 {
     std::string msg_to_send;
-    char buffer[100];
-    memcpy(buffer, all_clients[i - 1]->_msgBuffer.c_str(), all_clients[i - 1]->_msgBuffer.length());
+    char buffer[1000];
+    ft_memcpy(buffer, all_clients[i - 1]->_msgBuffer.c_str(), all_clients[i - 1]->_msgBuffer.length());
     int k = -2;
     // reading till reaching the '\n' character
     while (k && k != -1)
     {
-        ft_bzero(buffer, 100);
+        ft_bzero(buffer, 1000);
         k = recv(p_fd[i].fd, buffer, 99, 0);
         all_clients[i - 1]->_msgBuffer.append(buffer);
     }
@@ -127,7 +126,7 @@ void server::handle_disconnection(int i)
                     delete channel;
                     channels.erase(it--);
                 }
-                // inform channel members that he left
+                // inform channel m`embers that he left
                 else {
                     for (std::vector<Client *>::iterator __it = channel->_members.begin(); __it != channel->_members.end(); __it++)
                         (*__it)->send(":" + all_clients[i - 1]->_nickName + " QUIT :Quit: " + all_clients[i - 1]->_leaveMessage + "\r\n");
@@ -207,7 +206,6 @@ server::~server(){
 
 int main(int arc, char **arv)
 {
-    logger.info("Process pid: " + std::to_string(getpid()));
     if (arc != 3)
     {
         logger.error("the executable run as follows: ./ircserv <port> <password>");

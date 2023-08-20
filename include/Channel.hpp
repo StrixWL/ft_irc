@@ -16,7 +16,7 @@ class Channel {
 		std::string _topic; //
 		bool _opOnlyTopic; //
 		bool _inviteOnly;
-		int _limit;
+		size_t _limit;
 		// broadcast to all members
 		void broadcast(std::string message);
 		// broadcast to all members except the broadcaster

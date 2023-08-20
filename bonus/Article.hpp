@@ -8,13 +8,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <chrono>
-#include <thread>
 #include <cstdlib>
 #include <cstring>
 #include <stdio.h>
 #include <string.h>
-
 
 class Article {
     private:
@@ -26,8 +23,6 @@ class Article {
     Article(const Article &src);
     std::string getTitle(void) const;
     std::string getContent(void) const;
-    void upvote();
-    void downvote() ;
 };
 
 #endif

@@ -1,10 +1,12 @@
 NAME=			ircserv
-FLAGS=			#-Wall -Werror -Wextra
+FLAGS=			-Wall -Werror -Wextra
 CC=				c++
 HEADERS=		include/Client.hpp \
 				include/Logger.hpp \
 				include/Server.hpp \
-				include/Channel.hpp
+				include/Channel.hpp \
+				bonus/Article.hpp bonus/Dic.hpp \
+				bonus/Page.hpp
 BONUS_HEADERS=	bonus/dic.hpp
 SRC_DIR=		src
 SRC_FILES=		server.cpp \
@@ -20,18 +22,18 @@ SRC_FILES_BONUS= bonus/Dic.cpp \
 OBJ_FILES_BONUS=		$(SRC_FILES_BONUS:.cpp=.o)
 OBJ_FILES=		$(SRC_FILES:.cpp=.o)
 
-
 all: $(NAME)
 
 
-$(NAME): $(OBJ_FILES)
+$(NAME): $(OBJ_FILES) $(HEADERS)
 	$(CC) $(OBJ_FILES) -o $(NAME) -std=c++98 -Iinclude
 
-%.o: %.cpp $(HEADERS)
+%.o: %.cpp  $(HEADERS)
 	$(CC) $(FLAGS) -Iinclude -Ibonus -c $< -o $@ -std=c++98
+	echo $<
 
 bonus : $(OBJ_FILES_BONUS) $(HEADERS)
-	$(CC) $(OBJ_FILES_BONUS) -o bot -std=c++98 -Iinclude
+	$(CC) $(FLAGS) $(OBJ_FILES_BONUS) -o bot -std=c++98 -Iinclude
 
 clean:
 	rm -f $(OBJ_FILES) $(OBJ_FILES_BONUS)

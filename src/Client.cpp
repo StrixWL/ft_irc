@@ -5,7 +5,7 @@
 // I USE logger.warn TO SEND ERROR MESSAGES BACK TO THE CLIENT CHECK Client.hpp/Logger.hpp
 
 // these are the commands
-Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorized(false), _registered(false), _welcomed(false), _keepAlive(true), logger(client_fd) {
+Client::Client(int &client_fd): _clientFd(client_fd), _nickName("*"), _authorized(false), _registered(false), _welcomed(false), logger(client_fd), _keepAlive(true) {
 	_commands.insert(std::make_pair("USER", &Client::user)); // (complete)
 	_commands.insert(std::make_pair("PASS", &Client::pass)); // (complete)
 	_commands.insert(std::make_pair("NICK", &Client::nick)); // (complete)
@@ -52,9 +52,8 @@ void Client::execute(std::string commandLine) {
 			logger.warn("464 " + _nickName + " :You have not registered");
 		}
 		// if command exist, execute, otherwise, unknown command
-		if (_commands[command]) {
+		if (_commands[command])
 			(this->*_commands[command])(commandLine);
-		}
 		else {
 			logger.warn("421 " + _nickName + " " + command + " :Unknown command");
 		}

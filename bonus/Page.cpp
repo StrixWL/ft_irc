@@ -30,15 +30,6 @@ std::string Page::display() {
 int Page::getNumArticles() const {
     return articles.size();
 }
-
-bool Page::isFull() const {
-    return articles.size() >= 10;
-}
-
-bool Page::isEmpty() const {
-    return articles.empty();
-}
-
 const std::map<std::string, std::string>& Page::getArticle() const
 {
    return this->articles;
